@@ -18,6 +18,7 @@ defmodule BetBuddiesWeb.Router do
     pipe_through :browser
 
     live "/", PageLive.Index, :index
+    live "/game/:id", GameLive.Session
   end
 
   # Other scopes may use custom stacks.
