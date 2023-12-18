@@ -1,33 +1,21 @@
 defmodule BetBuddiesWeb.GameLive.Session do
   use Phoenix.LiveView
   use Phoenix.Component
+  use BetBuddiesWeb, :html
 
-  def new_shuffled_deck() do
-    suits = ["spade", "heart", "club", "diamond"]
-    values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-
-    for suit <- suits, value <- values do
-      %{
-        "suit" => suit,
-        "value" => value
-      }
-    end
-    |> Enum.shuffle()
-  end
-
-  def draw(deck, draw_count) do
-    drawn_cards = Enum.take(deck, draw_count)
-    %{"drawn_cards" => drawn_cards, "new_deck" => deck -- drawn_cards}
+  def handle_params(%{"id" => id, "n" => player_name}, _, socket) do
+    {:noreply, assign(socket, :player_name, player_name)}
   end
 
   def render(assigns) do
     ~H"""
-    <body style="background-position: center;
-      background-image: url(https://community-cdn.frontier.co.uk/elite-dangerous/3.3/wallpapers/Elite_wallpaper_4k_19.jpg);">
+    <body style={
+      "background-position: center;
+      background-image: url(#{~p"/images/background.jpg"});"}>
       <div class="flex flex-col justify-between h-screen p-2">
         <.other_players />
         <.dealer />
-        <.player />
+        <.player player_name={@player_name}/>
       </div>
     </body>
     """
@@ -60,10 +48,7 @@ defmodule BetBuddiesWeb.GameLive.Session do
   def card_back(assigns) do
     ~H"""
     <div class="flex flex-col border shadow-lg rounded p-1.5 h-16 w-11 sm:w-16 sm:h-24 justify-center bg-red-200">
-      <img
-        src="/images/card_back.png"
-        class="border-2 border-red-100 rounded"
-      />
+      <img src="/images/card_back.png" class="border-2 border-red-100 rounded" />
     </div>
     """
   end
@@ -100,7 +85,7 @@ defmodule BetBuddiesWeb.GameLive.Session do
     <div class="flex flex-row justify-center space-x-2">
       <div class="flex border shadow-lg rounded p-2 bg-white">
         <div class="flex-col space-y-2">
-          <div class="flex-row text-center">My Name</div>
+          <div class="flex-row text-center"><%= assigns.player_name %></div>
           <div class="flex-row bg-gray-300 rounded p-1 text-center">$1,000</div>
           <div class="flex-row space-y-1">
             <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Fold</button>
@@ -128,7 +113,9 @@ defmodule BetBuddiesWeb.GameLive.Session do
       <div class="flex-col space-y-2">
         <div class="flex-row text-center text-xs sm:text-base">Player Name</div>
         <div class="flex-row bg-gray-300 rounded p-1 text-center text-xs sm:text-base">$1,000</div>
-        <div class="flex-row bg-[#c9af8b] rounded p-1 text-center text-xs sm:text-base">Raise $50/call $50/fold/check</div>
+        <div class="flex-row bg-[#c9af8b] rounded p-1 text-center text-xs sm:text-base">
+          Raise $50/call $50/fold/check
+        </div>
         <div class="flex flex-row space-x-2 justify-center">
           <.card_back />
           <.card_back />
