@@ -3,26 +3,42 @@ defmodule BetBuddiesWeb.GameLive.Session do
   use Phoenix.Component
   use BetBuddiesWeb, :html
 
-  def mount(_params, session, socket) do
-    IO.inspect(session, label: "SESSION")
+  def mount(
+        %{"game_id" => game_id} = _params,
+        %{"player_id" => player_id} = _session,
+        socket
+      ) do
+    %Poker.GameState{players: players} = get_game_state(game_id)
+
+    player = find_player(players, player_id)
+
+    socket =
+      assign(socket, :game_id, game_id)
+      |> assign(:player, player)
+
     {:ok, socket}
   end
 
-  def handle_params(%{"id" => _id}, _session, socket) do
-    {:noreply, socket}
+  def find_player(players, player_id) do
+    Enum.find(players, fn %Poker.Player{} = player -> player.player_id == player_id end)
+  end
+
+  def get_game_state(game_id) do
+    [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
+    GenServer.call(pid, :read)
   end
 
   def render(assigns) do
     ~H"""
-    <body style={
+    <div style={
       "background-position: center;
       background-image: url(#{~p"/images/background.jpg"});"}>
       <div class="flex flex-col justify-between h-screen p-2">
         <.other_players />
         <.dealer />
-        <.player player_name={"kero"}/>
+        <.player player_name={@player.name} />
       </div>
-    </body>
+    </div>
     """
   end
 

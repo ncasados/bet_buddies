@@ -1,38 +1,38 @@
 defmodule Poker do
   alias Ecto.UUID
+  alias Poker.Player
 
   def new_game_id() do
     UUID.generate()
   end
 
-  def create_game(game_id) do
+  def create_game(game_id, player_id, player_name) do
     deck = new_shuffled_deck()
 
-    with {:ok, game_pid} <-
-           DynamicSupervisor.start_child(
-             Poker.GameSupervisor,
-             {Poker.GameSession,
-              %Poker.GameState{
-                game_id: game_id,
-                game_started_at: DateTime.utc_now(),
-                password: "",
-                game_status: "ACTIVE",
-                dealer: %Poker.Dealer{
-                  hand: [],
-                  deck: deck,
-                  pot: 0,
-                  side_pot: 0
-                },
-                players: []
-              }}
-           ),
-         {:ok, _registry_pid} <-
-           Registry.register(Poker.GameRegistry, "poker_game", %{
-             "game_id" => game_id,
-             "game_pid" => game_pid
-           }) do
-      {:ok, "game_started"}
-    end
+    DynamicSupervisor.start_child(
+      Poker.GameSupervisor,
+      {Poker.GameSession,
+       %Poker.GameState{
+         game_id: game_id,
+         game_started_at: DateTime.utc_now(),
+         password: "",
+         game_status: "ACTIVE",
+         dealer: %Poker.Dealer{
+           hand: [],
+           deck: deck,
+           pot: 0,
+           side_pot: 0
+         },
+         players: [
+           %Player{
+             player_id: player_id,
+             name: player_name,
+             hand: [],
+             wallet: 1000
+           }
+         ]
+       }}
+    )
   end
 
   def new_shuffled_deck() do

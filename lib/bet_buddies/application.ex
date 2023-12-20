@@ -19,7 +19,7 @@ defmodule BetBuddies.Application do
       # Start to serve requests, typically the last entry
       BetBuddiesWeb.Endpoint,
       {DynamicSupervisor, name: Poker.GameSupervisor, strategy: :one_for_one},
-      {Registry, name: Poker.GameRegistry, keys: :duplicate}
+      {Registry, name: Poker.GameRegistry, keys: :unique}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

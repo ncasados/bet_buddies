@@ -18,7 +18,7 @@ defmodule BetBuddiesWeb.Plugs.PlayerDetailsCookie do
 
   def set_player_id_cookie_and_session(conn, player_id) do
     put_resp_cookie(conn, "player_id", player_id)
-    |> put_session(:player_details, %{player_id: player_id})
-    |> assign(:player_details, %{player_id: player_id})
+    |> put_session("player_id", player_id)
+    |> assign(:player_id, player_id)
   end
 end
