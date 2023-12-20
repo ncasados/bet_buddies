@@ -17,7 +17,9 @@ defmodule BetBuddies.Application do
       # Start a worker by calling: BetBuddies.Worker.start_link(arg)
       # {BetBuddies.Worker, arg},
       # Start to serve requests, typically the last entry
-      BetBuddiesWeb.Endpoint
+      BetBuddiesWeb.Endpoint,
+      {DynamicSupervisor, name: Poker.GameSupervisor, strategy: :one_for_one},
+      {Registry, name: Poker.GameRegistry, keys: :duplicate}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

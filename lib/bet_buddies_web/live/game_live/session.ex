@@ -3,8 +3,13 @@ defmodule BetBuddiesWeb.GameLive.Session do
   use Phoenix.Component
   use BetBuddiesWeb, :html
 
-  def handle_params(%{"id" => id, "n" => player_name}, _, socket) do
-    {:noreply, assign(socket, :player_name, player_name)}
+  def mount(_params, session, socket) do
+    IO.inspect(session, label: "SESSION")
+    {:ok, socket}
+  end
+
+  def handle_params(%{"id" => _id}, _session, socket) do
+    {:noreply, socket}
   end
 
   def render(assigns) do
@@ -15,7 +20,7 @@ defmodule BetBuddiesWeb.GameLive.Session do
       <div class="flex flex-col justify-between h-screen p-2">
         <.other_players />
         <.dealer />
-        <.player player_name={@player_name}/>
+        <.player player_name={"kero"}/>
       </div>
     </body>
     """

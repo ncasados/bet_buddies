@@ -1,9 +1,11 @@
 defmodule BetBuddiesWeb.Router do
   use BetBuddiesWeb, :router
+  alias BetBuddiesWeb.Plugs.PlayerDetailsCookie
 
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
+    plug PlayerDetailsCookie
     plug :fetch_live_flash
     plug :put_root_layout, html: {BetBuddiesWeb.Layouts, :root}
     plug :protect_from_forgery
