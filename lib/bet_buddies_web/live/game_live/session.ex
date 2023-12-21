@@ -111,13 +111,18 @@ defmodule BetBuddiesWeb.GameLive.Session do
         "diamond" -> "text-[#FF0000]"
       end
 
+    assigns =
+      assign(assigns, :color, color)
+      |> assign(:suit, suit)
+      |> assign(:card, card)
+
     ~H"""
     <div class="flex flex-col h-16 w-11 sm:w-16 sm:h-24 border shadow-lg justify-between p-1 bg-white">
       <div class="flex flex-row">
-        <div class={color}><%= suit %><%= card["value"] %></div>
+        <div class={@color}><%= @suit %><%= @card["value"] %></div>
       </div>
       <div class="flex flex-row-reverse">
-        <div class={color}><%= suit %><%= card["value"] %></div>
+        <div class={@color}><%= @suit %><%= @card["value"] %></div>
       </div>
     </div>
     """
@@ -174,7 +179,16 @@ defmodule BetBuddiesWeb.GameLive.Session do
               <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Raise</button>
             </div>
             <div class="flex flex-row justify-center space-x-2">
-              <input id="ante-slider" name="ante-value" type="range" class="w-full" min="0" max={@player.wallet} value="0" phx-change="ante-changed" />
+              <input
+                id="ante-slider"
+                name="ante-value"
+                type="range"
+                class="w-full"
+                min="0"
+                max={@player.wallet}
+                value="0"
+                phx-change="ante-changed"
+              />
               <p id="slider-value" class="w-16">$<%= @ante %></p>
             </div>
           </form>
