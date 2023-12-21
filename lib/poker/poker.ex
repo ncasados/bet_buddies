@@ -6,8 +6,15 @@ defmodule Poker do
     UUID.generate()
   end
 
+  def join_game(game_id, player_id, player_name) do
+    [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
+    GenServer.call(pid, {:join, %{"player_id" => player_id, "player_name" => player_name}})
+  end
+
   def create_game(game_id, player_id, player_name) do
     deck = new_shuffled_deck()
+
+    %Poker.Draw{drawn_cards: drawn_cards, new_deck: new_deck} = draw(deck, 2)
 
     DynamicSupervisor.start_child(
       Poker.GameSupervisor,
@@ -19,7 +26,7 @@ defmodule Poker do
          game_status: "ACTIVE",
          dealer: %Poker.Dealer{
            hand: [],
-           deck: deck,
+           deck: new_deck,
            pot: 0,
            side_pot: 0
          },
@@ -27,7 +34,7 @@ defmodule Poker do
            %Player{
              player_id: player_id,
              name: player_name,
-             hand: [],
+             hand: drawn_cards,
              wallet: 1000
            }
          ]
@@ -50,6 +57,6 @@ defmodule Poker do
 
   def draw(deck, draw_count) do
     drawn_cards = Enum.take(deck, draw_count)
-    %{"drawn_cards" => drawn_cards, "new_deck" => deck -- drawn_cards}
+    %Poker.Draw{drawn_cards: drawn_cards, new_deck: deck -- drawn_cards}
   end
 end
