@@ -80,7 +80,7 @@ defmodule BetBuddiesWeb.GameLive.Session do
     ~H"""
     <div class="flex flex-row justify-start sm:justify-center space-x-2 overflow-auto">
       <%= for player <- assigns.players do %>
-        <.other_player player_name={player.name} />
+        <.other_player player={player} />
       <% end %>
     </div>
     """
@@ -206,10 +206,10 @@ defmodule BetBuddiesWeb.GameLive.Session do
     ~H"""
     <div class="flex border shadow-lg rounded p-2 bg-white">
       <div class="flex-col space-y-2">
-        <div class="flex-row text-center text-xs sm:text-base"><%= @player_name %></div>
-        <div class="flex-row bg-gray-300 rounded p-1 text-center text-xs sm:text-base">$1,000</div>
+        <div class="flex-row text-center text-xs sm:text-base"><%= @player.name %></div>
+        <div class="flex-row bg-gray-300 rounded p-1 text-center text-xs sm:text-base">$<%= @player.wallet %></div>
         <div class="flex-row bg-[#c9af8b] rounded p-1 text-center text-xs sm:text-base">
-          Raise $50/call $50/fold/check
+          Next Action
         </div>
         <div class="flex flex-row space-x-2 justify-center">
           <.card_back />
