@@ -8,5 +8,6 @@ defmodule Poker.GameState do
     field :game_stage, :string
     embeds_one :dealer, Poker.Dealer
     field :players, {:array, :map}
+    field :player_turn, :string
   end
 end
