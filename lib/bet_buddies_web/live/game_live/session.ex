@@ -59,7 +59,7 @@ defmodule BetBuddiesWeb.GameLive.Session do
 
   def get_game_state(game_id) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
-    GenServer.call(pid, :read)
+    Poker.get_game_state(pid)
   end
 
   def render(assigns) do

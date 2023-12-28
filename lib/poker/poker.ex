@@ -1,45 +1,21 @@
 defmodule Poker do
   alias Ecto.UUID
-  alias Poker.Player
 
   def new_game_id() do
     UUID.generate()
   end
 
+  def get_game_state(pid) do
+    Poker.GameSession.read(pid)
+  end
+
   def join_game(game_id, player_id, player_name) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
-    GenServer.call(pid, {:join, %{"player_id" => player_id, "player_name" => player_name}})
+    Poker.GameSession.join(pid, player_id, player_name)
   end
 
   def create_game(game_id, player_id, player_name) do
-    deck = new_shuffled_deck()
-
-    %Poker.Draw{drawn_cards: drawn_cards, new_deck: new_deck} = draw(deck, 2)
-
-    DynamicSupervisor.start_child(
-      Poker.GameSupervisor,
-      {Poker.GameSession,
-       %Poker.GameState{
-         game_id: game_id,
-         game_started_at: DateTime.utc_now(),
-         password: "",
-         game_status: "ACTIVE",
-         dealer: %Poker.Dealer{
-           hand: [],
-           deck: new_deck,
-           pot: 0,
-           side_pot: 0
-         },
-         players: [
-           %Player{
-             player_id: player_id,
-             name: player_name,
-             hand: drawn_cards,
-             wallet: 1000
-           }
-         ]
-       }}
-    )
+    Poker.GameSupervisor.create_game(game_id, player_id, player_name)
   end
 
   def new_shuffled_deck() do

@@ -5,7 +5,7 @@ defmodule Poker.GameState do
     field :game_id, :string
     field :game_started_at, :utc_datetime
     field :password, :string
-    field :game_status, :string
+    field :game_stage, :string
     embeds_one :dealer, Poker.Dealer
     field :players, {:array, :map}
   end
