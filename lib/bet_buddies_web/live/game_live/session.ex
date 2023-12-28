@@ -11,7 +11,7 @@ defmodule BetBuddiesWeb.GameLive.Session do
       ) do
     PubSub.subscribe(BetBuddies.PubSub, game_id)
 
-    %Poker.GameState{players: players} = get_game_state(game_id)
+    %Poker.GameState{players: players} = Poker.get_game_state(game_id)
 
     player = find_player(players, player_id)
 
@@ -35,7 +35,7 @@ defmodule BetBuddiesWeb.GameLive.Session do
     game_id = socket.assigns.game_id
     player = socket.assigns.player
 
-    %Poker.GameState{players: players} = get_game_state(game_id)
+    %Poker.GameState{players: players} = Poker.get_game_state(game_id)
 
     player = find_player(players, player.player_id)
     other_players = players -- [player]
@@ -55,11 +55,6 @@ defmodule BetBuddiesWeb.GameLive.Session do
 
   def find_player(players, player_id) do
     Enum.find(players, fn %Poker.Player{} = player -> player.player_id == player_id end)
-  end
-
-  def get_game_state(game_id) do
-    [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
-    Poker.get_game_state(pid)
   end
 
   def render(assigns) do
@@ -207,7 +202,9 @@ defmodule BetBuddiesWeb.GameLive.Session do
     <div class="flex border shadow-lg rounded p-2 bg-white">
       <div class="flex-col space-y-2">
         <div class="flex-row text-center text-xs sm:text-base"><%= @player.name %></div>
-        <div class="flex-row bg-gray-300 rounded p-1 text-center text-xs sm:text-base">$<%= @player.wallet %></div>
+        <div class="flex-row bg-gray-300 rounded p-1 text-center text-xs sm:text-base">
+          $<%= @player.wallet %>
+        </div>
         <div class="flex-row bg-[#c9af8b] rounded p-1 text-center text-xs sm:text-base">
           Next Action
         </div>

@@ -5,7 +5,8 @@ defmodule Poker do
     UUID.generate()
   end
 
-  def get_game_state(pid) do
+  def get_game_state(game_id) do
+    [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
     Poker.GameSession.read(pid)
   end
 
