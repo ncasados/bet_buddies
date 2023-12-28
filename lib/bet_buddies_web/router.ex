@@ -19,8 +19,8 @@ defmodule BetBuddiesWeb.Router do
   scope "/", BetBuddiesWeb do
     pipe_through :browser
 
-    live "/", PageLive.Index, :index
-    live "/game/:game_id", GameLive.Session
+    live "/", PageLive.Index
+    live "/game/:game_id", GameLive.Index
   end
 
   # Other scopes may use custom stacks.

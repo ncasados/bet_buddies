@@ -1,4 +1,4 @@
-defmodule BetBuddiesWeb.GameLive.Session do
+defmodule BetBuddiesWeb.GameLive.Index do
   use Phoenix.LiveView
   use Phoenix.Component
   alias Phoenix.PubSub
@@ -11,7 +11,7 @@ defmodule BetBuddiesWeb.GameLive.Session do
       ) do
     PubSub.subscribe(BetBuddies.PubSub, game_id)
 
-    %Poker.GameState{players: players} = Poker.get_game_state(game_id)
+    %Poker.GameState{players: players, game_stage: game_stage} = Poker.get_game_state(game_id)
 
     player = find_player(players, player_id)
 
@@ -19,6 +19,7 @@ defmodule BetBuddiesWeb.GameLive.Session do
 
     socket =
       assign(socket, :game_id, game_id)
+      |> assign(:game_stage, game_stage)
       |> assign(:player, player)
       |> assign(:other_players, other_players)
       |> assign(:ante, 0)
@@ -63,11 +64,29 @@ defmodule BetBuddiesWeb.GameLive.Session do
       "background-position: center;
       background-image: url(#{~p"/images/background.jpg"});"}>
       <div class="flex flex-col justify-between h-screen p-2">
-        <.other_players players={@other_players} />
-        <.dealer />
-        <.player player={@player} ante={@ante} />
+        <.other_players players={@other_players} game_stage={@game_stage} />
+        <%= if @game_stage == "LOBBY" do %>
+          <.game_start game_id={@game_id} />
+        <% else %>
+          <.dealer />
+        <% end %>
+        <.player player={@player} ante={@ante} game_stage={@game_stage} />
       </div>
     </div>
+    """
+  end
+
+  def game_start(assigns) do
+    ~H"""
+    <button
+      type="submit"
+      name="start-game-button"
+      id="start-game-button"
+      class="bg-purple-500 p-4 rounded-3xl text-white"
+      value={@game_id}
+    >
+      Start Game
+    </button>
     """
   end
 
@@ -75,7 +94,7 @@ defmodule BetBuddiesWeb.GameLive.Session do
     ~H"""
     <div class="flex flex-row justify-start sm:justify-center space-x-2 overflow-auto">
       <%= for player <- assigns.players do %>
-        <.other_player player={player} />
+        <.other_player player={player} game_stage={@game_stage} />
       <% end %>
     </div>
     """
@@ -165,32 +184,35 @@ defmodule BetBuddiesWeb.GameLive.Session do
         <div class="flex-col space-y-2">
           <div class="flex-row text-center"><%= @player.name %></div>
           <div class="flex-row bg-gray-300 rounded p-1 text-center">$<%= @player.wallet %></div>
-          <form>
-            <div class="flex-row space-y-1">
-              <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Fold</button>
-              <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Check</button>
-              <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Bet</button>
-              <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Call</button>
-              <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Raise</button>
+          <%= if @game_stage == "LOBBY" do %>
+          <% else %>
+            <form>
+              <div class="flex-row space-y-1">
+                <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Fold</button>
+                <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Check</button>
+                <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Bet</button>
+                <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Call</button>
+                <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Raise</button>
+              </div>
+              <div class="flex flex-row justify-center space-x-2">
+                <input
+                  id="ante-slider"
+                  name="ante-value"
+                  type="range"
+                  class="w-full"
+                  min="0"
+                  max={@player.wallet}
+                  value="0"
+                  phx-change="ante-changed"
+                />
+                <p id="slider-value" class="w-16">$<%= @ante %></p>
+              </div>
+            </form>
+            <div class="flex flex-row space-x-2 justify-center">
+              <.card card={List.first(@player.hand)} />
+              <.card card={List.last(@player.hand)} />
             </div>
-            <div class="flex flex-row justify-center space-x-2">
-              <input
-                id="ante-slider"
-                name="ante-value"
-                type="range"
-                class="w-full"
-                min="0"
-                max={@player.wallet}
-                value="0"
-                phx-change="ante-changed"
-              />
-              <p id="slider-value" class="w-16">$<%= @ante %></p>
-            </div>
-          </form>
-          <div class="flex flex-row space-x-2 justify-center">
-            <.card card={List.first(@player.hand)} />
-            <.card card={List.last(@player.hand)} />
-          </div>
+          <% end %>
         </div>
       </div>
     </div>
@@ -205,13 +227,16 @@ defmodule BetBuddiesWeb.GameLive.Session do
         <div class="flex-row bg-gray-300 rounded p-1 text-center text-xs sm:text-base">
           $<%= @player.wallet %>
         </div>
-        <div class="flex-row bg-[#c9af8b] rounded p-1 text-center text-xs sm:text-base">
-          Next Action
-        </div>
-        <div class="flex flex-row space-x-2 justify-center">
-          <.card_back />
-          <.card_back />
-        </div>
+        <%= if @game_stage == "LOBBY" do %>
+        <% else %>
+          <div class="flex-row bg-[#c9af8b] rounded p-1 text-center text-xs sm:text-base">
+            Next Action
+          </div>
+          <div class="flex flex-row space-x-2 justify-center">
+            <.card_back />
+            <.card_back />
+          </div>
+        <% end %>
       </div>
     </div>
     """

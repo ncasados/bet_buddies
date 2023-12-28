@@ -5,8 +5,6 @@ defmodule Poker.GameSupervisor do
   def create_game(game_id, player_id, player_name) do
     deck = Poker.new_shuffled_deck()
 
-    %Poker.Draw{drawn_cards: drawn_cards, new_deck: new_deck} = Poker.draw(deck, 2)
-
     DynamicSupervisor.start_child(
       Poker.GameSupervisor,
       {Poker.GameSession,
@@ -17,7 +15,7 @@ defmodule Poker.GameSupervisor do
          game_stage: "LOBBY",
          dealer: %Poker.Dealer{
            hand: [],
-           deck: new_deck,
+           deck: deck,
            pot: 0,
            side_pot: 0
          },
@@ -25,7 +23,7 @@ defmodule Poker.GameSupervisor do
            %Player{
              player_id: player_id,
              name: player_name,
-             hand: drawn_cards,
+             hand: [],
              wallet: 1000
            }
          ]
