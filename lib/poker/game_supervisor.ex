@@ -24,7 +24,8 @@ defmodule Poker.GameSupervisor do
              player_id: player_id,
              name: player_name,
              hand: [],
-             wallet: 1000
+             wallet: 1000,
+             is_host?: true
            }
          ]
        }}

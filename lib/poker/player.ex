@@ -5,6 +5,7 @@ defmodule Poker.Player do
     field :player_id, :string
     field :name, :string
     field :wallet, :integer
-    field :hand, {:array, :map}
+    field :hand, {:array, :map}, default: []
+    field :is_host?, :boolean, default: false
   end
 end
