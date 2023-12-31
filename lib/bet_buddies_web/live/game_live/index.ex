@@ -125,7 +125,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       end
 
     suit =
-      case card["suit"] do
+      case card.suit do
         nil -> ""
         "spade" -> "♠"
         "heart" -> "♥"
@@ -134,7 +134,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       end
 
     color =
-      case card["suit"] do
+      case card.suit do
         nil -> ""
         "spade" -> "text-[#000000]"
         "heart" -> "text-[#FF0000]"
@@ -150,10 +150,10 @@ defmodule BetBuddiesWeb.GameLive.Index do
     ~H"""
     <div class="flex flex-col h-16 w-11 sm:w-16 sm:h-24 border shadow-lg justify-between p-1 bg-white">
       <div class="flex flex-row">
-        <div class={@color}><%= @suit %><%= @card["value"] %></div>
+        <div class={@color}><%= @suit %><%= @card.value %></div>
       </div>
       <div class="flex flex-row-reverse">
-        <div class={@color}><%= @suit %><%= @card["value"] %></div>
+        <div class={@color}><%= @suit %><%= @card.value %></div>
       </div>
     </div>
     """

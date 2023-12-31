@@ -26,17 +26,15 @@ defmodule Poker.GameSession do
 
   @impl true
   def handle_call(:start, _from, %GameState{} = game_state) do
-    deck = Map.get(game_state, :dealer) |> Map.get(:deck)
+    original_deck = Map.get(game_state, :dealer_deck)
     players = Map.get(game_state, :players)
     first_player = List.first(players)
 
-    %{"new_deck" => new_deck, "players" => players} = draw_for_all_players(deck, players)
+    %{"new_deck" => new_deck, "players" => players} = draw_for_all_players(original_deck, players)
 
     game_state =
       Map.update!(game_state, :game_stage, fn _ -> "ACTIVE" end)
-      |> Map.update!(:dealer, fn dealer ->
-        Map.update!(dealer, :deck, fn _ -> new_deck end)
-      end)
+      |> Map.update!(:dealer_deck, fn _ -> new_deck end)
       |> Map.update!(:players, fn _ -> players end)
       |> Map.update!(:player_turn, fn _ -> first_player.player_id end)
 

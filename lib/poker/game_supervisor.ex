@@ -13,12 +13,10 @@ defmodule Poker.GameSupervisor do
          game_started_at: DateTime.utc_now(),
          password: "",
          game_stage: "LOBBY",
-         dealer: %Poker.Dealer{
-           hand: [],
-           deck: deck,
-           pot: 0,
-           side_pot: 0
-         },
+         dealer_hand: [],
+         dealer_deck: deck,
+         pot: 0,
+         side_pot: 0,
          players: [
            %Player{
              player_id: player_id,
