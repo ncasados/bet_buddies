@@ -11,7 +11,13 @@ defmodule BetBuddiesWeb.GameLive.Index do
       ) do
     PubSub.subscribe(BetBuddies.PubSub, game_id)
 
-    %Poker.GameState{players: players, game_stage: game_stage, player_turn: player_turn} = Poker.get_game_state(game_id)
+    %Poker.GameState{
+      players: players,
+      game_stage: game_stage,
+      player_turn: player_turn,
+      pot: pot,
+      side_pot: side_pot
+    } = Poker.get_game_state(game_id)
 
     player = find_player(players, player_id)
 
@@ -24,6 +30,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:other_players, other_players)
       |> assign(:ante, 0)
       |> assign(:player_turn, player_turn)
+      |> assign(:pot, pot)
+      |> assign(:side_pot, side_pot)
 
     {:ok, socket}
   end
@@ -42,7 +50,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
     game_id = socket.assigns.game_id
     player = socket.assigns.player
 
-    %Poker.GameState{players: players, game_stage: game_stage, player_turn: player_turn} = Poker.get_game_state(game_id)
+    %Poker.GameState{players: players, game_stage: game_stage, player_turn: player_turn} =
+      Poker.get_game_state(game_id)
 
     player = find_player(players, player.player_id)
     other_players = players -- [player]
@@ -52,13 +61,12 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:game_stage, game_stage)
       |> assign(:player, player)
       |> assign(:other_players, other_players)
-      |> assign(:player_turn , player_turn)
+      |> assign(:player_turn, player_turn)
 
     {:noreply, socket}
   end
 
   def handle_info(_, socket) do
-    IO.puts("hi")
     {:noreply, socket}
   end
 
@@ -74,16 +82,16 @@ defmodule BetBuddiesWeb.GameLive.Index do
       <div class="flex flex-col justify-between h-screen p-2">
         <.other_players players={@other_players} game_stage={@game_stage} />
         <%= case assigns do %>
-        <% %{game_stage: "LOBBY", player: %{is_host?: true}} -> %>
-          <.game_start game_id={@game_id} />
-        <% %{game_stage: "LOBBY", player: %{is_host?: false}} -> %>
-        <div class="flex justify-center">
-          <div class="bg-white p-4 rounded text-center max-w-xs">
-            <p class="animate-bounce">Waiting for host to start game...</p>
-          </div>
-        </div>
-        <% _ -> %>
-          <.dealer />
+          <% %{game_stage: "LOBBY", player: %{is_host?: true}} -> %>
+            <.game_start game_id={@game_id} />
+          <% %{game_stage: "LOBBY", player: %{is_host?: false}} -> %>
+            <div class="flex justify-center">
+              <div class="bg-white p-4 rounded text-center max-w-xs">
+                <p class="animate-bounce">Waiting for host to start game...</p>
+              </div>
+            </div>
+          <% _ -> %>
+            <.dealer pot={@pot} side_pot={@side_pot} />
         <% end %>
         <.player player={@player} ante={@ante} game_stage={@game_stage} player_turn={@player_turn} />
       </div>
@@ -182,10 +190,10 @@ defmodule BetBuddiesWeb.GameLive.Index do
           </div>
           <div class="flex flex-row space-x-2 justify-evenly">
             <div class="flex flex-col">
-              Pot: $12,000
+              Pot: $<%= @pot %>
             </div>
             <div class="flex flex-col">
-              Side Pot: $1,000
+              Side Pot: $<%= @side_pot %>
             </div>
           </div>
         </div>
@@ -202,40 +210,50 @@ defmodule BetBuddiesWeb.GameLive.Index do
           <div class="flex-row text-center"><%= @player.name %></div>
           <div class="flex-row bg-gray-300 rounded p-1 text-center">$<%= @player.wallet %></div>
           <%= case assigns do %>
-          <% %{game_stage: "LOBBY"} -> %>
-            <div></div>
-          <% %{player_turn: player_turn} -> %>
-            <%= case player_turn == @player.player_id do %>
-            <% false -> %>
+            <% %{game_stage: "LOBBY"} -> %>
               <div></div>
-            <% true -> %>
-              <form>
-                <div class="flex-row space-y-1">
-                  <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Fold</button>
-                  <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Check</button>
-                  <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Bet</button>
-                  <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Call</button>
-                  <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">Raise</button>
-                </div>
-                <div class="flex flex-row justify-center space-x-2">
-                  <input
-                    id="ante-slider"
-                    name="ante-value"
-                    type="range"
-                    class="w-full"
-                    min="0"
-                    max={@player.wallet}
-                    value="0"
-                    phx-change="ante-changed"
-                  />
-                  <p id="slider-value" class="w-16">$<%= @ante %></p>
-                </div>
-              </form>
-            <% end %>
-            <div class="flex flex-row space-x-2 justify-center">
-              <.card card={List.first(@player.hand)} />
-              <.card card={List.last(@player.hand)} />
-            </div>
+            <% %{player_turn: player_turn} -> %>
+              <%= case player_turn == @player.player_id do %>
+                <% false -> %>
+                  <div></div>
+                <% true -> %>
+                  <form>
+                    <div class="flex-row space-y-1">
+                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
+                        Fold
+                      </button>
+                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
+                        Check
+                      </button>
+                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
+                        Bet
+                      </button>
+                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
+                        Call
+                      </button>
+                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
+                        Raise
+                      </button>
+                    </div>
+                    <div class="flex flex-row justify-center space-x-2">
+                      <input
+                        id="ante-slider"
+                        name="ante-value"
+                        type="range"
+                        class="w-full"
+                        min="0"
+                        max={@player.wallet}
+                        value="0"
+                        phx-change="ante-changed"
+                      />
+                      <p id="slider-value" class="w-16">$<%= @ante %></p>
+                    </div>
+                  </form>
+              <% end %>
+              <div class="flex flex-row space-x-2 justify-center">
+                <.card card={List.first(@player.hand)} />
+                <.card card={List.last(@player.hand)} />
+              </div>
           <% end %>
         </div>
       </div>

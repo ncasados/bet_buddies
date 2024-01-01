@@ -6,13 +6,14 @@ defmodule Poker.GameState do
     field :game_started_at, :utc_datetime
     field :password, :string
     field :game_stage, :string
-    field :dealer_hand, {:array, :map}
-    field :dealer_deck, {:array, :map}
+    embeds_many :dealer_hand, Poker.Card
+    embeds_many :dealer_deck, Poker.Card
     field :pot, :integer
     field :side_pot, :integer
-    field :players, {:array, :map}
+    embeds_many :players, Poker.Player
     field :player_turn, :string
     field :most_recent_bet, :integer
-    field :most_recent_better, :string
+    embeds_one :most_recent_better, Poker.Player
+    field :next_minimum_bet, :integer
   end
 end

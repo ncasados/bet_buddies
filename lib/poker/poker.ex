@@ -1,5 +1,11 @@
 defmodule Poker do
+  alias Poker.Card
   alias Ecto.UUID
+
+  def bet(game_id, player_id, amount) do
+    [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
+    Poker.GameSession.bet(pid, player_id, amount)
+  end
 
   def new_game_id() do
     UUID.generate()
@@ -37,8 +43,9 @@ defmodule Poker do
     |> Enum.shuffle()
   end
 
+  @spec draw([%Card{}], integer()) :: %{drawn_cards: [%Card{}], new_deck: [%Card{}]}
   def draw(deck, draw_count) do
     drawn_cards = Enum.take(deck, draw_count)
-    %Poker.Draw{drawn_cards: drawn_cards, new_deck: deck -- drawn_cards}
+    %{drawn_cards: drawn_cards, new_deck: deck -- drawn_cards}
   end
 end
