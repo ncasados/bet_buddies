@@ -1,5 +1,9 @@
 # BetBuddies
 
+<img src="./priv/static/images/bet_buddies.png" style="width:60%" />
+
+## To start it
+
 To start your Phoenix server:
 
   * Run `mix setup` to install and setup dependencies
