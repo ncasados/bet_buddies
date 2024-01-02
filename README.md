@@ -18,3 +18,9 @@ You need only your name to create a game. In the URL you'll find a game id like 
 Give the other player the `big-old-long-id` and with their name, they'll be able to join the game.
 
 Some features are still missing.
+
+# Features
+- [x] Game can be created
+- [x] Players can join game
+- [x] Host can start game
+- [ ] A round of poker can be played
