@@ -31,38 +31,65 @@ defmodule Poker.GameSession do
   end
 
   @impl true
-  def handle_call({:bet, player_id, amount}, _from, %GameState{} = game_state) do
+  def handle_call({:bet, player_id, amount} = _msg, _from, %GameState{} = game_state) do
+    {amount, _} = if is_binary(amount), do: Integer.parse(amount)
     %{player: betting_player, index: player_index} = find_player(game_state, player_id)
 
-    updated_player = Map.update!(betting_player, :wallet, fn wallet -> wallet - amount end)
+    if betting_player.wallet < amount do
+      updated_player = Map.update!(betting_player, :wallet, fn wallet -> wallet - wallet end)
 
-    updated_players =
-      List.replace_at(game_state.players, player_index, updated_player)
+      updated_players =
+        List.replace_at(game_state.players, player_index, updated_player)
 
-    game_state =
-      Map.update!(game_state, :most_recent_better, fn _ -> updated_player end)
-      |> Map.update!(:most_recent_bet, fn _ -> amount end)
-      |> Map.update!(:players, fn _ -> updated_players end)
-      |> Map.update!(:pot, fn pot -> pot + amount end)
-      |> Map.update!(:next_minimum_bet, fn _ -> amount * 2 end)
+      game_state =
+        Map.update!(game_state, :most_recent_better, fn _ -> updated_player end)
+        |> Map.update!(:most_recent_bet, fn _ -> amount end)
+        |> Map.update!(:players, fn _ -> updated_players end)
+        |> Map.update!(:pot, fn pot -> pot + betting_player.wallet end)
+        |> Map.update!(:minimum_bet, fn _ -> amount * 2 end)
+        |> Map.update!(:bets, fn last_bets -> [amount | last_bets] end)
+        |> Map.update!(:turn_number, fn n ->
+          if n + 1 > length(updated_players), do: 1, else: n + 1
+        end)
 
-    PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+      PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
-    {:reply, game_state, game_state}
+      {:reply, game_state, game_state}
+    else
+      updated_player = Map.update!(betting_player, :wallet, fn wallet -> wallet - amount end)
+
+      updated_players =
+        List.replace_at(game_state.players, player_index, updated_player)
+
+      game_state =
+        Map.update!(game_state, :most_recent_better, fn _ -> updated_player end)
+        |> Map.update!(:most_recent_bet, fn _ -> amount end)
+        |> Map.update!(:players, fn _ -> updated_players end)
+        |> Map.update!(:pot, fn pot -> pot + amount end)
+        |> Map.update!(:minimum_bet, fn _ -> amount * 2 end)
+        |> Map.update!(:turn_number, fn n ->
+          if n + 1 > length(updated_players), do: 1, else: n + 1
+        end)
+
+      PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+      {:reply, game_state, game_state}
+    end
   end
 
   def handle_call(:start, _from, %GameState{} = game_state) do
     original_deck = Map.get(game_state, :dealer_deck)
     players = Map.get(game_state, :players)
-    first_player = List.first(players)
+    shuffled_players = assign_number_to_players_randomly_sort_by_number(players)
 
-    %{new_deck: new_deck, players: players} = draw_for_all_players(original_deck, players)
+    %{new_deck: new_deck, players: ready_players} =
+      draw_for_all_players(original_deck, shuffled_players)
 
     game_state =
       Map.update!(game_state, :game_stage, fn _ -> "ACTIVE" end)
       |> Map.update!(:dealer_deck, fn _ -> new_deck end)
-      |> Map.update!(:players, fn _ -> players end)
-      |> Map.update!(:player_turn, fn _ -> first_player.player_id end)
+      |> Map.update!(:players, fn _ -> ready_players end)
+      |> Map.update!(:turn_number, fn _ -> 1 end)
 
     PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -87,6 +114,16 @@ defmodule Poker.GameSession do
       _ ->
         {:reply, game_state, game_state}
     end
+  end
+
+  defp assign_number_to_players_randomly_sort_by_number(players) do
+    player_numbers = Enum.shuffle(1..length(players))
+
+    Enum.zip(player_numbers, players)
+    |> Enum.map(fn {player_number, player} ->
+      Map.update!(player, :number, fn _ -> player_number end)
+    end)
+    |> Enum.sort(&(&1.number <= &2.number))
   end
 
   @spec find_player(%GameState{}, binary()) :: %{player: %Player{}, index: integer()}

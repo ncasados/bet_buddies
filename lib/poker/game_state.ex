@@ -11,9 +11,10 @@ defmodule Poker.GameState do
     field :pot, :integer
     field :side_pot, :integer
     embeds_many :players, Poker.Player
-    field :player_turn, :string
+    field :turn_number, :integer
     field :most_recent_bet, :integer
     embeds_one :most_recent_better, Poker.Player
-    field :next_minimum_bet, :integer
+    field :minimum_bet, :integer, default: 0
+    field :bets, {:array, :integer}, default: []
   end
 end

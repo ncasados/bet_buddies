@@ -1,6 +1,8 @@
 defmodule BetBuddiesWeb.GameLive.Index do
   use Phoenix.LiveView
   use Phoenix.Component
+  alias Poker.GameState
+  alias Poker.Player
   alias Phoenix.PubSub
   use BetBuddiesWeb, :html
 
@@ -11,13 +13,14 @@ defmodule BetBuddiesWeb.GameLive.Index do
       ) do
     PubSub.subscribe(BetBuddies.PubSub, game_id)
 
-    %Poker.GameState{
+    %GameState{
       players: players,
       game_stage: game_stage,
-      player_turn: player_turn,
+      turn_number: turn_number,
       pot: pot,
-      side_pot: side_pot
-    } = Poker.get_game_state(game_id)
+      side_pot: side_pot,
+      minimum_bet: minimum_bet
+    } = game_state = Poker.get_game_state(game_id)
 
     player = find_player(players, player_id)
 
@@ -28,12 +31,20 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:game_stage, game_stage)
       |> assign(:player, player)
       |> assign(:other_players, other_players)
-      |> assign(:ante, 0)
-      |> assign(:player_turn, player_turn)
+      |> assign(:bet, minimum_bet)
+      |> assign(:turn_number, turn_number)
       |> assign(:pot, pot)
       |> assign(:side_pot, side_pot)
+      |> assign(:minimum_bet, minimum_bet)
+      |> assign(:all_in?, player.wallet <= minimum_bet)
+      |> assign(:game_state, game_state)
 
     {:ok, socket}
+  end
+
+  def handle_event("bet", %{"value" => amount} = _params, socket) do
+    Poker.bet(socket.assigns.game_id, socket.assigns.player.player_id, amount)
+    {:noreply, socket}
   end
 
   def handle_event("start-game", _params, socket) do
@@ -41,8 +52,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
     {:noreply, socket}
   end
 
-  def handle_event("ante-changed", %{"ante-value" => ante_value} = _params, socket) do
-    socket = assign(socket, :ante, ante_value)
+  def handle_event("bet-changed", %{"bet-value" => bet_value} = _params, socket) do
+    socket = assign(socket, :bet, bet_value)
     {:noreply, socket}
   end
 
@@ -50,7 +61,13 @@ defmodule BetBuddiesWeb.GameLive.Index do
     game_id = socket.assigns.game_id
     player = socket.assigns.player
 
-    %Poker.GameState{players: players, game_stage: game_stage, player_turn: player_turn} =
+    %GameState{
+      players: players,
+      game_stage: game_stage,
+      turn_number: turn_number,
+      pot: pot,
+      minimum_bet: minimum_bet
+    } =
       Poker.get_game_state(game_id)
 
     player = find_player(players, player.player_id)
@@ -61,7 +78,11 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:game_stage, game_stage)
       |> assign(:player, player)
       |> assign(:other_players, other_players)
-      |> assign(:player_turn, player_turn)
+      |> assign(:turn_number, turn_number)
+      |> assign(:pot, pot)
+      |> assign(:minimum_bet, minimum_bet)
+      |> assign(:bet, minimum_bet)
+      |> assign(:all_in?, player.wallet <= minimum_bet)
 
     {:noreply, socket}
   end
@@ -70,6 +91,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
     {:noreply, socket}
   end
 
+  @spec find_player([%Player{}], binary()) :: %Player{}
   def find_player(players, player_id) do
     Enum.find(players, fn %Poker.Player{} = player -> player.player_id == player_id end)
   end
@@ -93,7 +115,14 @@ defmodule BetBuddiesWeb.GameLive.Index do
           <% _ -> %>
             <.dealer pot={@pot} side_pot={@side_pot} />
         <% end %>
-        <.player player={@player} ante={@ante} game_stage={@game_stage} player_turn={@player_turn} />
+        <.player
+          player={@player}
+          bet={@bet}
+          game_stage={@game_stage}
+          turn_number={@turn_number}
+          minimum_bet={@minimum_bet}
+          all_in?={@all_in?}
+        />
       </div>
     </div>
     """
@@ -212,8 +241,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
           <%= case assigns do %>
             <% %{game_stage: "LOBBY"} -> %>
               <div></div>
-            <% %{player_turn: player_turn} -> %>
-              <%= case player_turn == @player.player_id do %>
+            <% %{turn_number: turn_number} -> %>
+              <%= case turn_number == @player.number do %>
                 <% false -> %>
                   <div></div>
                 <% true -> %>
@@ -225,8 +254,13 @@ defmodule BetBuddiesWeb.GameLive.Index do
                       <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
                         Check
                       </button>
-                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
-                        Bet
+                      <button
+                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                        onclick="event.preventDefault()"
+                        phx-click="bet"
+                        value={@bet}
+                      >
+                        <%= if @all_in?, do: "All In", else: "Bet" %>
                       </button>
                       <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
                         Call
@@ -234,20 +268,26 @@ defmodule BetBuddiesWeb.GameLive.Index do
                       <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
                         Raise
                       </button>
+                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
+                        End Turn
+                      </button>
                     </div>
-                    <div class="flex flex-row justify-center space-x-2">
-                      <input
-                        id="ante-slider"
-                        name="ante-value"
-                        type="range"
-                        class="w-full"
-                        min="0"
-                        max={@player.wallet}
-                        value="0"
-                        phx-change="ante-changed"
-                      />
-                      <p id="slider-value" class="w-16">$<%= @ante %></p>
-                    </div>
+                    <%= if @all_in? do %>
+                    <% else %>
+                      <div class="flex flex-row justify-center space-x-2">
+                        <input
+                          id="bet-slider"
+                          name="bet-value"
+                          type="range"
+                          class="w-full"
+                          min={@minimum_bet}
+                          max={@player.wallet}
+                          value={@minimum_bet}
+                          phx-change="bet-changed"
+                        />
+                        <p id="slider-value" class="w-16">$<%= @bet %></p>
+                      </div>
+                    <% end %>
                   </form>
               <% end %>
               <div class="flex flex-row space-x-2 justify-center">
