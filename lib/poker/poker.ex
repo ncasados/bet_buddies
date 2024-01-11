@@ -3,6 +3,11 @@ defmodule Poker do
   alias Poker.Card
   alias Ecto.UUID
 
+  def check(game_id, player_id) do
+    [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
+    Poker.GameSession.check(pid, player_id)
+  end
+
   @spec bet(binary(), binary(), integer()) :: %GameState{}
   def bet(game_id, player_id, amount) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)

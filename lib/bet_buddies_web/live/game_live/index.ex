@@ -47,6 +47,11 @@ defmodule BetBuddiesWeb.GameLive.Index do
     {:noreply, socket}
   end
 
+  def handle_event("check", _params, socket) do
+    Poker.check(socket.assigns.game_id, socket.assigns.player.player_id)
+    {:noreply, socket}
+  end
+
   def handle_event("start-game", _params, socket) do
     Poker.start_game(socket.assigns.game_id)
     {:noreply, socket}
@@ -251,7 +256,11 @@ defmodule BetBuddiesWeb.GameLive.Index do
                       <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
                         Fold
                       </button>
-                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
+                      <button
+                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                        onclick="event.preventDefault()"
+                        phx-click="check"
+                      >
                         Check
                       </button>
                       <button

@@ -5,6 +5,10 @@ defmodule Poker.GameSession do
   alias Phoenix.PubSub
   alias Poker.Player
 
+  def check(pid, player_id) do
+    GenServer.call(pid, {:check, player_id})
+  end
+
   @spec bet(pid(), binary(), integer()) :: %GameState{}
   def bet(pid, player_id, amount) do
     GenServer.call(pid, {:bet, player_id, amount})
@@ -31,6 +35,21 @@ defmodule Poker.GameSession do
   end
 
   @impl true
+  def handle_call({:check, _player_id}, _from, %GameState{} = game_state) do
+    %GameState{players: players} = game_state
+
+    game_state =
+      game_state
+      |> Map.update!(:turn_number, fn n ->
+        if n + 1 > length(players), do: 1, else: n + 1
+      end)
+      |> IO.inspect()
+
+    PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+    {:reply, game_state, game_state}
+  end
+
   def handle_call({:bet, player_id, amount} = _msg, _from, %GameState{} = game_state) do
     {amount, _} = if is_binary(amount), do: Integer.parse(amount)
     %{player: betting_player, index: player_index} = find_player(game_state, player_id)
