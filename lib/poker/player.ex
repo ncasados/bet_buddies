@@ -11,5 +11,6 @@ defmodule Poker.Player do
     field :is_small_blind?, :boolean, default: false
     field :is_under_the_gun?, :boolean, default: false
     field :number, :integer, default: 0
+    field :folded?, :boolean, default: true
   end
 end
