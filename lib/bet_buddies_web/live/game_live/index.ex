@@ -42,6 +42,11 @@ defmodule BetBuddiesWeb.GameLive.Index do
     {:ok, socket}
   end
 
+  def handle_event("fold", _params, socket) do
+    Poker.fold(socket.assigns.game_id, socket.assigns.player.player_id)
+    {:noreply, socket}
+  end
+
   def handle_event("bet", %{"value" => amount} = _params, socket) do
     Poker.bet(socket.assigns.game_id, socket.assigns.player.player_id, amount)
     {:noreply, socket}
