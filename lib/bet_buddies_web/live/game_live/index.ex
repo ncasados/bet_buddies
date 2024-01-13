@@ -253,7 +253,11 @@ defmodule BetBuddiesWeb.GameLive.Index do
                 <% true -> %>
                   <form>
                     <div class="flex-row space-y-1">
-                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
+                      <button
+                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                        onclick="event.preventDefault()"
+                        phx-click="fold"
+                      >
                         Fold
                       </button>
                       <button
