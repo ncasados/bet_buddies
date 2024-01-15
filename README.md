@@ -29,4 +29,12 @@ Some features are still missing.
 - [x] Game can be created
 - [x] Players can join game
 - [x] Host can start game
+- [x] Players can bet
+- [x] Players can check
+- [~] Players can call
+- [ ] Players can fold
+- [ ] Dealer is plays flop, turn, and river
+- [ ] Pot and Side Pot are managed
 - [ ] A round of poker can be played
+- [ ] Basic functionality has automatic tests
+- [ ] Deployed?
