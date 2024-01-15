@@ -1,6 +1,6 @@
 # BetBuddies
 
-<img src="./priv/static/images/bet_buddies.png" style="width:60%" />
+<a href="https://www.youtube.com/watch?v=1FE8Qc-SYfs"><img src="./priv/static/images/bet_buddies.png" style="width:60%" /></a>
 
 ## To start it
 
