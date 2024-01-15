@@ -31,7 +31,7 @@ Some features are still missing.
 - [x] Host can start game
 - [x] Players can bet
 - [x] Players can check
-- [~] Players can call
+- [ ] Players can call
 - [ ] Players can fold
 - [ ] Dealer is plays flop, turn, and river
 - [ ] Pot and Side Pot are managed
