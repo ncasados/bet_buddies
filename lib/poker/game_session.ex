@@ -5,6 +5,10 @@ defmodule Poker.GameSession do
   alias Phoenix.PubSub
   alias Poker.Player
 
+  def fold(pid, player_id) do
+    GenServer.call(pid, {:fold, player_id})
+  end
+
   def check(pid, player_id) do
     GenServer.call(pid, {:check, player_id})
   end
@@ -35,6 +39,27 @@ defmodule Poker.GameSession do
   end
 
   @impl true
+  def handle_call({:fold, player_id}, _from, %GameState{} = game_state) do
+    %GameState{players: players} = game_state
+
+    %{player: _player, index: player_index} = find_player(game_state, player_id)
+
+    game_state =
+      game_state
+      |> Map.update!(:players, fn players ->
+        List.update_at(players, player_index, fn %Player{} = player ->
+          Map.update!(player, :folded?, fn _ -> true end)
+        end)
+      end)
+      |> Map.update!(:turn_number, fn n ->
+        if n + 1 > length(players), do: 1, else: n + 1
+      end)
+
+    PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+    {:reply, game_state, game_state}
+  end
+
   def handle_call({:check, _player_id}, _from, %GameState{} = game_state) do
     %GameState{players: players} = game_state
 
@@ -43,7 +68,6 @@ defmodule Poker.GameSession do
       |> Map.update!(:turn_number, fn n ->
         if n + 1 > length(players), do: 1, else: n + 1
       end)
-      |> IO.inspect()
 
     PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
