@@ -280,7 +280,11 @@ defmodule BetBuddiesWeb.GameLive.Index do
                       >
                         <%= if @all_in?, do: "All In", else: "Bet" %>
                       </button>
-                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
+                      <button
+                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                        onclick="event.preventDefault()"
+                        phx-click="call"
+                      >
                         Call
                       </button>
                       <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
