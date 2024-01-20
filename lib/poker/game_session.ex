@@ -125,6 +125,8 @@ defmodule Poker.GameSession do
     players = Map.get(game_state, :players)
     shuffled_players = assign_number_to_players_randomly_sort_by_number(players)
 
+    blinded_players = assign_big_blind_and_little_blind_to_first_two_players(shuffled_players)
+
     %{new_deck: new_deck, players: ready_players} =
       draw_for_all_players(original_deck, shuffled_players)
 
@@ -157,6 +159,10 @@ defmodule Poker.GameSession do
       _ ->
         {:reply, game_state, game_state}
     end
+  end
+
+  defp assign_big_blind_and_little_blind_to_first_two_players(players) do
+    # assing big blind and little blind to players.
   end
 
   defp assign_number_to_players_randomly_sort_by_number(players) do
@@ -207,7 +213,7 @@ defmodule Poker.GameSession do
       %GameState{game_stage: "LOBBY"} ->
         Map.update!(game_state, :players, fn player_list ->
           [
-            %Player{player_id: player_id, name: player_name, wallet: 1000, hand: []}
+            %Player{player_id: player_id, name: player_name, wallet: 20_000, hand: []}
             | player_list
           ]
         end)

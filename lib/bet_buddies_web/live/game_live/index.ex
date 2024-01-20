@@ -287,12 +287,6 @@ defmodule BetBuddiesWeb.GameLive.Index do
                       >
                         Call
                       </button>
-                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
-                        Raise
-                      </button>
-                      <button class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center">
-                        End Turn
-                      </button>
                     </div>
                     <%= if @all_in? do %>
                     <% else %>
