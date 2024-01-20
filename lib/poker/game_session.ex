@@ -128,7 +128,7 @@ defmodule Poker.GameSession do
     blinded_players = assign_big_blind_and_little_blind_to_first_two_players(shuffled_players)
 
     %{new_deck: new_deck, players: ready_players} =
-      draw_for_all_players(original_deck, shuffled_players)
+      draw_for_all_players(original_deck, blinded_players)
 
     game_state =
       Map.update!(game_state, :game_stage, fn _ -> "ACTIVE" end)
@@ -163,6 +163,14 @@ defmodule Poker.GameSession do
 
   defp assign_big_blind_and_little_blind_to_first_two_players(players) do
     # assing big blind and little blind to players.
+    # big_blind_player = Map.update!(player_0, :is_big_blind?, fn _ -> true end)
+    # small_blind_player = Map.update!(player_1, :is_small_blind?, fn _ -> true end)
+    [player1 | [player2 | the_rest]] = players
+
+    player1 = Map.update!(player1, :is_big_blind?, fn _ -> true end)
+    player2 = Map.update!(player2, :is_small_blind?, fn _ -> true end)
+
+    Enum.reverse([player1 | [player2 | the_rest]])
   end
 
   defp assign_number_to_players_randomly_sort_by_number(players) do
