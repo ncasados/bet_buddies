@@ -4,7 +4,8 @@ defmodule Poker.Player do
   embedded_schema do
     field :player_id, :string
     field :name, :string
-    field :wallet, :integer
+    field :wallet, :integer, default: 0
+    field :bet, :integer, default: 0
     field :hand, {:array, :map}, default: []
     field :is_host?, :boolean, default: false
     field :is_big_blind?, :boolean, default: false

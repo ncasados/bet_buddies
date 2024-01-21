@@ -167,8 +167,18 @@ defmodule Poker.GameSession do
     # small_blind_player = Map.update!(player_1, :is_small_blind?, fn _ -> true end)
     [player1 | [player2 | the_rest]] = players
 
-    player1 = Map.update!(player1, :is_big_blind?, fn _ -> true end)
-    player2 = Map.update!(player2, :is_small_blind?, fn _ -> true end)
+    big_blind_bet = 800
+    small_blind_bet = 400
+
+    player1 =
+      Map.update!(player1, :is_big_blind?, fn _ -> true end)
+      |> Map.update!(:wallet, fn wallet -> wallet - 800 end)
+      |> Map.update!(:bet, fn bet -> bet + big_blind_bet end)
+
+    player2 =
+      Map.update!(player2, :is_small_blind?, fn _ -> true end)
+      |> Map.update!(:wallet, fn wallet -> wallet - 400 end)
+      |> Map.update!(:bet, fn bet -> bet + small_blind_bet end)
 
     Enum.reverse([player1 | [player2 | the_rest]])
   end
