@@ -120,7 +120,7 @@ defmodule Poker.GameSession do
     end
   end
 
-  def handle_call(:start, _from, %GameState{} = game_state) do
+  def handle_call(:start, _from, %GameState{big_blind: big_blind} = game_state) do
     original_deck = Map.get(game_state, :dealer_deck)
     players = Map.get(game_state, :players)
     shuffled_players = assign_number_to_players_randomly_sort_by_number(players)
@@ -135,6 +135,7 @@ defmodule Poker.GameSession do
       |> Map.update!(:dealer_deck, fn _ -> new_deck end)
       |> Map.update!(:players, fn _ -> ready_players end)
       |> Map.update!(:turn_number, fn _ -> 1 end)
+      |> Map.update!(:most_recent_bet, fn _ -> big_blind end)
 
     PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 

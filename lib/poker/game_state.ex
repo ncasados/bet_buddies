@@ -16,5 +16,7 @@ defmodule Poker.GameState do
     embeds_one :most_recent_better, Poker.Player
     field :minimum_bet, :integer, default: 0
     field :bets, {:array, :integer}, default: []
+    field :big_blind, :integer, default: 800
+    field :small_blind, :integer, default: 400
   end
 end
