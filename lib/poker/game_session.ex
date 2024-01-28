@@ -123,9 +123,8 @@ defmodule Poker.GameSession do
   def handle_call(:start, _from, %GameState{big_blind: big_blind} = game_state) do
     original_deck = Map.get(game_state, :dealer_deck)
     players = Map.get(game_state, :players)
-    shuffled_players = assign_number_to_players_randomly_sort_by_number(players)
 
-    blinded_players = assign_big_blind_and_little_blind_to_first_two_players(shuffled_players)
+    blinded_players = assign_big_blind_and_little_blind_to_last_two_players(players)
 
     %{new_deck: new_deck, players: ready_players} =
       draw_for_all_players(original_deck, blinded_players)
@@ -162,7 +161,7 @@ defmodule Poker.GameSession do
     end
   end
 
-  defp assign_big_blind_and_little_blind_to_first_two_players(players) do
+  defp assign_big_blind_and_little_blind_to_last_two_players(players) do
     # assing big blind and little blind to players.
     # big_blind_player = Map.update!(player_0, :is_big_blind?, fn _ -> true end)
     # small_blind_player = Map.update!(player_1, :is_small_blind?, fn _ -> true end)
@@ -181,7 +180,7 @@ defmodule Poker.GameSession do
       |> Map.update!(:wallet, fn wallet -> wallet - 400 end)
       |> Map.update!(:bet, fn bet -> bet + small_blind_bet end)
 
-    Enum.reverse([player1 | [player2 | the_rest]])
+    [player1 | [player2 | the_rest]]
   end
 
   defp assign_number_to_players_randomly_sort_by_number(players) do
