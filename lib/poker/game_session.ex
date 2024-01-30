@@ -5,6 +5,10 @@ defmodule Poker.GameSession do
   alias Phoenix.PubSub
   alias Poker.Player
 
+  def call(pid, player_id, amount) do
+    GenServer.call(pid, {:call, player_id, amount})
+  end
+
   def fold(pid, player_id) do
     GenServer.call(pid, {:fold, player_id})
   end
@@ -39,6 +43,36 @@ defmodule Poker.GameSession do
   end
 
   @impl true
+  def handle_call(
+        {:call, player_id, amount},
+        _from,
+        %GameState{} = game_state
+      ) do
+    {amount, _} = if is_binary(amount), do: Integer.parse(amount)
+    %{player: calling_player, index: player_index} = find_player(game_state, player_id)
+
+    updated_player =
+      Map.update!(calling_player, :wallet, fn wallet ->
+        wallet - amount
+      end)
+      |> Map.update!(:bet, fn bet -> bet + amount end)
+
+    updated_players =
+      List.replace_at(game_state.players, player_index, updated_player)
+
+    game_state =
+      game_state
+      |> Map.update!(:players, fn _ -> updated_players end)
+      |> Map.update!(:pot, fn pot -> pot + amount end)
+      |> Map.update!(:turn_number, fn n ->
+        if n + 1 > length(updated_players), do: 1, else: n + 1
+      end)
+
+    PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+    {:reply, game_state, game_state}
+  end
+
   def handle_call({:fold, player_id}, _from, %GameState{} = game_state) do
     %GameState{players: players} = game_state
 
@@ -79,18 +113,20 @@ defmodule Poker.GameSession do
     %{player: betting_player, index: player_index} = find_player(game_state, player_id)
 
     if betting_player.wallet < amount do
-      updated_player = Map.update!(betting_player, :wallet, fn wallet -> wallet - wallet end)
+      updated_player =
+        Map.update!(betting_player, :wallet, fn wallet -> wallet - wallet end)
+        # Problems expected
+        |> Map.update!(:bet, fn _ -> amount end)
 
       updated_players =
         List.replace_at(game_state.players, player_index, updated_player)
 
       game_state =
-        Map.update!(game_state, :most_recent_better, fn _ -> updated_player end)
-        |> Map.update!(:most_recent_bet, fn _ -> amount end)
+        game_state
         |> Map.update!(:players, fn _ -> updated_players end)
         |> Map.update!(:pot, fn pot -> pot + betting_player.wallet end)
         |> Map.update!(:minimum_bet, fn _ -> amount * 2 end)
-        |> Map.update!(:bets, fn last_bets -> [amount | last_bets] end)
+        |> Map.update!(:most_recent_max_bet, fn _ -> get_max_bet_from_players(updated_players) end)
         |> Map.update!(:turn_number, fn n ->
           if n + 1 > length(updated_players), do: 1, else: n + 1
         end)
@@ -99,17 +135,19 @@ defmodule Poker.GameSession do
 
       {:reply, game_state, game_state}
     else
-      updated_player = Map.update!(betting_player, :wallet, fn wallet -> wallet - amount end)
+      updated_player =
+        Map.update!(betting_player, :wallet, fn wallet -> wallet - amount end)
+        |> Map.update!(:bet, fn bet -> bet + amount end)
 
       updated_players =
         List.replace_at(game_state.players, player_index, updated_player)
 
       game_state =
-        Map.update!(game_state, :most_recent_better, fn _ -> updated_player end)
-        |> Map.update!(:most_recent_bet, fn _ -> amount end)
+        game_state
         |> Map.update!(:players, fn _ -> updated_players end)
         |> Map.update!(:pot, fn pot -> pot + amount end)
         |> Map.update!(:minimum_bet, fn _ -> amount * 2 end)
+        |> Map.update!(:most_recent_max_bet, fn _ -> get_max_bet_from_players(updated_players) end)
         |> Map.update!(:turn_number, fn n ->
           if n + 1 > length(updated_players), do: 1, else: n + 1
         end)
@@ -120,21 +158,30 @@ defmodule Poker.GameSession do
     end
   end
 
-  def handle_call(:start, _from, %GameState{big_blind: big_blind} = game_state) do
+  def handle_call(
+        :start,
+        _from,
+        %GameState{big_blind: big_blind, small_blind: small_blind} = game_state
+      ) do
     original_deck = Map.get(game_state, :dealer_deck)
     players = Map.get(game_state, :players)
 
-    blinded_players = assign_big_blind_and_little_blind_to_last_two_players(players)
+    blinded_and_labeled_players =
+      players
+      |> assign_number_to_players()
+      |> assign_big_blind_and_little_blind_to_last_two_players()
 
     %{new_deck: new_deck, players: ready_players} =
-      draw_for_all_players(original_deck, blinded_players)
+      draw_for_all_players(original_deck, blinded_and_labeled_players)
 
     game_state =
       Map.update!(game_state, :game_stage, fn _ -> "ACTIVE" end)
       |> Map.update!(:dealer_deck, fn _ -> new_deck end)
       |> Map.update!(:players, fn _ -> ready_players end)
       |> Map.update!(:turn_number, fn _ -> 1 end)
-      |> Map.update!(:most_recent_bet, fn _ -> big_blind end)
+      |> Map.update!(:minimum_bet, fn _ -> big_blind * 2 end)
+      |> Map.update!(:most_recent_max_bet, fn _ -> get_max_bet_from_players(ready_players) end)
+      |> Map.update!(:pot, fn _ -> big_blind + small_blind end)
 
     PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -161,11 +208,16 @@ defmodule Poker.GameSession do
     end
   end
 
+  def get_max_bet_from_players(players) do
+    [first_player | _tail] = Enum.sort_by(players, fn %Player{bet: bet} -> bet end, :desc)
+    Map.get(first_player, :bet)
+  end
+
   defp assign_big_blind_and_little_blind_to_last_two_players(players) do
     # assing big blind and little blind to players.
     # big_blind_player = Map.update!(player_0, :is_big_blind?, fn _ -> true end)
     # small_blind_player = Map.update!(player_1, :is_small_blind?, fn _ -> true end)
-    [player1 | [player2 | the_rest]] = players
+    [player1 | [player2 | the_rest]] = Enum.reverse(players)
 
     big_blind_bet = 800
     small_blind_bet = 400
@@ -183,7 +235,7 @@ defmodule Poker.GameSession do
     [player1 | [player2 | the_rest]]
   end
 
-  defp assign_number_to_players_randomly_sort_by_number(players) do
+  defp assign_number_to_players(players) do
     player_numbers = Enum.shuffle(1..length(players))
 
     Enum.zip(player_numbers, players)

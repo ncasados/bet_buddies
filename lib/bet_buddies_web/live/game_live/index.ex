@@ -19,10 +19,11 @@ defmodule BetBuddiesWeb.GameLive.Index do
       turn_number: turn_number,
       pot: pot,
       side_pot: side_pot,
-      minimum_bet: minimum_bet
+      minimum_bet: minimum_bet,
+      most_recent_max_bet: most_recent_max_bet
     } = game_state = Poker.get_game_state(game_id)
 
-    player = find_player(players, player_id)
+    %Player{bet: players_bet} = player = find_player(players, player_id)
 
     other_players = players -- [player]
 
@@ -31,11 +32,12 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:game_stage, game_stage)
       |> assign(:player, player)
       |> assign(:other_players, other_players)
-      |> assign(:bet, minimum_bet)
+      |> assign(:bet_slider_value, minimum_bet)
       |> assign(:turn_number, turn_number)
       |> assign(:pot, pot)
       |> assign(:side_pot, side_pot)
       |> assign(:minimum_bet, minimum_bet)
+      |> assign(:minimum_call, most_recent_max_bet - players_bet)
       |> assign(:all_in?, player.wallet <= minimum_bet)
       |> assign(:game_state, game_state)
 
@@ -63,7 +65,12 @@ defmodule BetBuddiesWeb.GameLive.Index do
   end
 
   def handle_event("bet-changed", %{"bet-value" => bet_value} = _params, socket) do
-    socket = assign(socket, :bet, bet_value)
+    socket = assign(socket, :bet_slider_value, bet_value)
+    {:noreply, socket}
+  end
+
+  def handle_event("call", %{"value" => amount} = _params, socket) do
+    Poker.call(socket.assigns.game_id, socket.assigns.player.player_id, amount)
     {:noreply, socket}
   end
 
@@ -76,11 +83,12 @@ defmodule BetBuddiesWeb.GameLive.Index do
       game_stage: game_stage,
       turn_number: turn_number,
       pot: pot,
-      minimum_bet: minimum_bet
+      minimum_bet: minimum_bet,
+      most_recent_max_bet: most_recent_max_bet
     } =
       Poker.get_game_state(game_id)
 
-    player = find_player(players, player.player_id)
+    %Player{bet: players_bet} = player = find_player(players, player.player_id)
     other_players = players -- [player]
 
     socket =
@@ -91,7 +99,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:turn_number, turn_number)
       |> assign(:pot, pot)
       |> assign(:minimum_bet, minimum_bet)
-      |> assign(:bet, minimum_bet)
+      |> assign(:minimum_call, most_recent_max_bet - players_bet)
+      |> assign(:bet_slider_value, minimum_bet)
       |> assign(:all_in?, player.wallet <= minimum_bet)
 
     {:noreply, socket}
@@ -127,10 +136,11 @@ defmodule BetBuddiesWeb.GameLive.Index do
         <% end %>
         <.player
           player={@player}
-          bet={@bet}
+          bet_slider_value={@bet_slider_value}
           game_stage={@game_stage}
           turn_number={@turn_number}
           minimum_bet={@minimum_bet}
+          minimum_call={@minimum_call}
           all_in?={@all_in?}
         />
       </div>
@@ -276,7 +286,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
                         class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
                         onclick="event.preventDefault()"
                         phx-click="bet"
-                        value={@bet}
+                        value={@bet_slider_value}
                       >
                         <%= if @all_in?, do: "All In", else: "Bet" %>
                       </button>
@@ -284,6 +294,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
                         class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
                         onclick="event.preventDefault()"
                         phx-click="call"
+                        value={@minimum_call}
                       >
                         Call
                       </button>
@@ -301,7 +312,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
                           value={@minimum_bet}
                           phx-change="bet-changed"
                         />
-                        <p id="slider-value" class="w-16">$<%= @bet %></p>
+                        <p id="slider-value" class="w-16">$<%= @bet_slider_value %></p>
                       </div>
                     <% end %>
                   </form>
