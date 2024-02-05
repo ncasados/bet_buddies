@@ -1,4 +1,8 @@
 defmodule Poker.GameState do
+  # Put all of the business logic here such as checking the state is correct
+  # Stuff such as betting, calling, folding, checking
+  # See https://github.com/zblanco/many_ways_to_workflow/blob/master/op_otp/lib/op_otp/
+
   use Ecto.Schema
 
   embedded_schema do
@@ -16,5 +20,12 @@ defmodule Poker.GameState do
     field :most_recent_max_bet, :integer, default: 0
     field :big_blind, :integer, default: 800
     field :small_blind, :integer, default: 400
+  end
+
+  def is_game_started?(%__MODULE__{game_stage: game_stage}) do
+    case game_stage do
+      "LOBBY" -> false
+      "ACTIVE" -> true
+    end
   end
 end
