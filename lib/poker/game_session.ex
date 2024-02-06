@@ -48,95 +48,14 @@ defmodule Poker.GameSession do
         _from,
         %GameState{} = game_state
       ) do
-    {amount, _} = if is_binary(amount), do: Integer.parse(amount)
-    %{player: calling_player, index: player_index} = find_player(game_state, player_id)
+    if GameState.is_game_active?(game_state) do
+      {amount, _} = if is_binary(amount), do: Integer.parse(amount)
+      %{player: calling_player, index: player_index} = find_player(game_state, player_id)
 
-    updated_player =
-      Map.update!(calling_player, :wallet, fn wallet ->
-        wallet - amount
-      end)
-      |> Map.update!(:bet, fn bet -> bet + amount end)
-
-    updated_players =
-      List.replace_at(game_state.players, player_index, updated_player)
-
-    game_state =
-      game_state
-      |> Map.update!(:players, fn _ -> updated_players end)
-      |> Map.update!(:pot, fn pot -> pot + amount end)
-      |> Map.update!(:turn_number, fn n ->
-        if n + 1 > length(updated_players), do: 1, else: n + 1
-      end)
-
-    PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
-
-    {:reply, game_state, game_state}
-  end
-
-  def handle_call({:fold, player_id}, _from, %GameState{} = game_state) do
-    %GameState{players: players} = game_state
-
-    %{player: _player, index: player_index} = find_player(game_state, player_id)
-
-    game_state =
-      game_state
-      |> Map.update!(:players, fn players ->
-        List.update_at(players, player_index, fn %Player{} = player ->
-          Map.update!(player, :folded?, fn _ -> true end)
-        end)
-      end)
-      |> Map.update!(:turn_number, fn n ->
-        if n + 1 > length(players), do: 1, else: n + 1
-      end)
-
-    PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
-
-    {:reply, game_state, game_state}
-  end
-
-  def handle_call({:check, _player_id}, _from, %GameState{} = game_state) do
-    %GameState{players: players} = game_state
-
-    game_state =
-      game_state
-      |> Map.update!(:turn_number, fn n ->
-        if n + 1 > length(players), do: 1, else: n + 1
-      end)
-
-    PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
-
-    {:reply, game_state, game_state}
-  end
-
-  def handle_call({:bet, player_id, amount} = _msg, _from, %GameState{} = game_state) do
-    {amount, _} = if is_binary(amount), do: Integer.parse(amount)
-    %{player: betting_player, index: player_index} = find_player(game_state, player_id)
-
-    if betting_player.wallet < amount do
       updated_player =
-        Map.update!(betting_player, :wallet, fn wallet -> wallet - wallet end)
-        # Problems expected
-        |> Map.update!(:bet, fn _ -> amount end)
-
-      updated_players =
-        List.replace_at(game_state.players, player_index, updated_player)
-
-      game_state =
-        game_state
-        |> Map.update!(:players, fn _ -> updated_players end)
-        |> Map.update!(:pot, fn pot -> pot + betting_player.wallet end)
-        |> Map.update!(:minimum_bet, fn _ -> amount * 2 end)
-        |> Map.update!(:most_recent_max_bet, fn _ -> get_max_bet_from_players(updated_players) end)
-        |> Map.update!(:turn_number, fn n ->
-          if n + 1 > length(updated_players), do: 1, else: n + 1
+        Map.update!(calling_player, :wallet, fn wallet ->
+          wallet - amount
         end)
-
-      PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
-
-      {:reply, game_state, game_state}
-    else
-      updated_player =
-        Map.update!(betting_player, :wallet, fn wallet -> wallet - amount end)
         |> Map.update!(:bet, fn bet -> bet + amount end)
 
       updated_players =
@@ -146,8 +65,6 @@ defmodule Poker.GameSession do
         game_state
         |> Map.update!(:players, fn _ -> updated_players end)
         |> Map.update!(:pot, fn pot -> pot + amount end)
-        |> Map.update!(:minimum_bet, fn _ -> amount * 2 end)
-        |> Map.update!(:most_recent_max_bet, fn _ -> get_max_bet_from_players(updated_players) end)
         |> Map.update!(:turn_number, fn n ->
           if n + 1 > length(updated_players), do: 1, else: n + 1
         end)
@@ -155,6 +72,109 @@ defmodule Poker.GameSession do
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
       {:reply, game_state, game_state}
+    else
+      {:reply, :game_not_active, game_state}
+    end
+  end
+
+  def handle_call({:fold, player_id}, _from, %GameState{} = game_state) do
+    if GameState.is_game_active?(game_state) do
+      %GameState{players: players} = game_state
+
+      %{player: _player, index: player_index} = find_player(game_state, player_id)
+
+      game_state =
+        game_state
+        |> Map.update!(:players, fn players ->
+          List.update_at(players, player_index, fn %Player{} = player ->
+            Map.update!(player, :folded?, fn _ -> true end)
+          end)
+        end)
+        |> Map.update!(:turn_number, fn n ->
+          if n + 1 > length(players), do: 1, else: n + 1
+        end)
+
+      PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+      {:reply, game_state, game_state}
+    else
+      {:reply, :game_not_active, game_state}
+    end
+  end
+
+  def handle_call({:check, _player_id}, _from, %GameState{} = game_state) do
+    if GameState.is_game_active?(game_state) do
+      %GameState{players: players} = game_state
+
+      game_state =
+        game_state
+        |> Map.update!(:turn_number, fn n ->
+          if n + 1 > length(players), do: 1, else: n + 1
+        end)
+
+      PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+      {:reply, game_state, game_state}
+    else
+      {:reply, :game_not_active, game_state}
+    end
+  end
+
+  def handle_call({:bet, player_id, amount} = _msg, _from, %GameState{} = game_state) do
+    if GameState.is_game_active?(game_state) do
+      {amount, _} = if is_binary(amount), do: Integer.parse(amount)
+      %{player: betting_player, index: player_index} = find_player(game_state, player_id)
+
+      if betting_player.wallet < amount do
+        updated_player =
+          Map.update!(betting_player, :wallet, fn wallet -> wallet - wallet end)
+          # Problems expected
+          |> Map.update!(:bet, fn _ -> amount end)
+
+        updated_players =
+          List.replace_at(game_state.players, player_index, updated_player)
+
+        game_state =
+          game_state
+          |> Map.update!(:players, fn _ -> updated_players end)
+          |> Map.update!(:pot, fn pot -> pot + betting_player.wallet end)
+          |> Map.update!(:minimum_bet, fn _ -> amount * 2 end)
+          |> Map.update!(:most_recent_max_bet, fn _ ->
+            get_max_bet_from_players(updated_players)
+          end)
+          |> Map.update!(:turn_number, fn n ->
+            if n + 1 > length(updated_players), do: 1, else: n + 1
+          end)
+
+        PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+        {:reply, game_state, game_state}
+      else
+        updated_player =
+          Map.update!(betting_player, :wallet, fn wallet -> wallet - amount end)
+          |> Map.update!(:bet, fn bet -> bet + amount end)
+
+        updated_players =
+          List.replace_at(game_state.players, player_index, updated_player)
+
+        game_state =
+          game_state
+          |> Map.update!(:players, fn _ -> updated_players end)
+          |> Map.update!(:pot, fn pot -> pot + amount end)
+          |> Map.update!(:minimum_bet, fn _ -> amount * 2 end)
+          |> Map.update!(:most_recent_max_bet, fn _ ->
+            get_max_bet_from_players(updated_players)
+          end)
+          |> Map.update!(:turn_number, fn n ->
+            if n + 1 > length(updated_players), do: 1, else: n + 1
+          end)
+
+        PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+        {:reply, game_state, game_state}
+      end
+    else
+      {:reply, :game_not_active, game_state}
     end
   end
 
@@ -163,29 +183,33 @@ defmodule Poker.GameSession do
         _from,
         %GameState{big_blind: big_blind, small_blind: small_blind} = game_state
       ) do
-    original_deck = Map.get(game_state, :dealer_deck)
-    players = Map.get(game_state, :players)
+    if GameState.enough_players?(game_state) do
+      original_deck = Map.get(game_state, :dealer_deck)
+      players = Map.get(game_state, :players)
 
-    blinded_and_labeled_players =
-      players
-      |> assign_number_to_players()
-      |> assign_big_blind_and_little_blind_to_last_two_players()
+      blinded_and_labeled_players =
+        players
+        |> assign_number_to_players()
+        |> assign_big_blind_and_little_blind_to_last_two_players()
 
-    %{new_deck: new_deck, players: ready_players} =
-      draw_for_all_players(original_deck, blinded_and_labeled_players)
+      %{new_deck: new_deck, players: ready_players} =
+        draw_for_all_players(original_deck, blinded_and_labeled_players)
 
-    game_state =
-      Map.update!(game_state, :game_stage, fn _ -> "ACTIVE" end)
-      |> Map.update!(:dealer_deck, fn _ -> new_deck end)
-      |> Map.update!(:players, fn _ -> ready_players end)
-      |> Map.update!(:turn_number, fn _ -> 1 end)
-      |> Map.update!(:minimum_bet, fn _ -> big_blind * 2 end)
-      |> Map.update!(:most_recent_max_bet, fn _ -> get_max_bet_from_players(ready_players) end)
-      |> Map.update!(:pot, fn _ -> big_blind + small_blind end)
+      game_state =
+        Map.update!(game_state, :game_stage, fn _ -> "ACTIVE" end)
+        |> Map.update!(:dealer_deck, fn _ -> new_deck end)
+        |> Map.update!(:players, fn _ -> ready_players end)
+        |> Map.update!(:turn_number, fn _ -> 1 end)
+        |> Map.update!(:minimum_bet, fn _ -> big_blind * 2 end)
+        |> Map.update!(:most_recent_max_bet, fn _ -> get_max_bet_from_players(ready_players) end)
+        |> Map.update!(:pot, fn _ -> big_blind + small_blind end)
 
-    PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+      PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
-    {:reply, game_state, game_state}
+      {:reply, game_state, game_state}
+    else
+      {:reply, :not_enough_players, game_state}
+    end
   end
 
   def handle_call(:read, _from, %GameState{} = game_state) do
