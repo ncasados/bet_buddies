@@ -22,10 +22,12 @@ defmodule Poker.GameState do
     field :small_blind, :integer, default: 400
   end
 
-  def is_game_started?(%__MODULE__{game_stage: game_stage}) do
-    case game_stage do
-      "LOBBY" -> false
-      "ACTIVE" -> true
-    end
-  end
+  def is_game_active?(%__MODULE__{game_stage: "ACTIVE"}), do: true
+  def is_game_active?(%__MODULE__{game_stage: _}), do: false
+
+  def is_game_lobby?(%__MODULE__{game_stage: "LOBBY"}), do: true
+  def is_game_lobby?(%__MODULE__{game_stage: _}), do: false
+
+  def enough_players?(%__MODULE__{players: players}) when length(players) >= 2, do: true
+  def enough_players?(%__MODULE__{players: players}) when length(players) < 2, do: false
 end
