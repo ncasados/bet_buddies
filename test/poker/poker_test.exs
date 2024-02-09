@@ -3,9 +3,15 @@ ExUnit.start()
 defmodule Poker.PokerTest do
   use ExUnit.Case, async: true
 
+  test "player cannot call while game is not started" do
+    assert {:ok, pid} = Poker.create_game("test_game_id", "test_player_id", "test_player")
+    assert :game_not_active = Poker.bet("test_game_id", "test_player_id", 200)
+    assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
+  end
+
   test "player cannot bet while game is not started" do
     assert {:ok, pid} = Poker.create_game("test_game_id", "test_player_id", "test_player")
-    assert :game_not_active = Poker.bet("test_game_id", "test_player_id", 21000)
+    assert :game_not_active = Poker.bet("test_game_id", "test_player_id", 20000)
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
