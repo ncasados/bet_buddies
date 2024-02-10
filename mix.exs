@@ -51,7 +51,8 @@ defmodule BetBuddies.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:plug_cowboy, "~> 2.5"},
-      {:mix_audit, "~> 2.1"}
+      {:mix_audit, "~> 2.1"},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
     ]
   end
 
