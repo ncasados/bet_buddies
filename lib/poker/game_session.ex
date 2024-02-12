@@ -196,13 +196,13 @@ defmodule Poker.GameSession do
         draw_for_all_players(original_deck, blinded_and_labeled_players)
 
       game_state =
-        Map.update!(game_state, :game_stage, fn _ -> "ACTIVE" end)
-        |> Map.update!(:dealer_deck, fn _ -> new_deck end)
-        |> Map.update!(:players, fn _ -> ready_players end)
-        |> Map.update!(:turn_number, fn _ -> 1 end)
-        |> Map.update!(:minimum_bet, fn _ -> big_blind * 2 end)
-        |> Map.update!(:most_recent_max_bet, fn _ -> get_max_bet_from_players(ready_players) end)
-        |> Map.update!(:pot, fn _ -> big_blind + small_blind end)
+        GameState.set_gamestate_to_active(game_state)
+        |> GameState.update_dealer_deck(new_deck)
+        |> GameState.update_players(ready_players)
+        |> GameState.set_turn_number(1)
+        |> GameState.set_minimum_bet(big_blind * 2)
+        |> GameState.set_most_recent_max_bet(get_max_bet_from_players(ready_players))
+        |> GameState.set_pot(big_blind + small_blind)
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -221,9 +221,9 @@ defmodule Poker.GameSession do
         _from,
         %GameState{} = game_state
       ) do
-    case is_player_already_joined?(game_state, player_id) do
+    case GameState.is_player_already_joined?(game_state, player_id) do
       false ->
-        game_state = add_player_to_state(game_state, player_id, player_name)
+        game_state = GameState.add_player_to_state(game_state, player_id, player_name)
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
         {:reply, game_state, game_state}
 
@@ -294,27 +294,6 @@ defmodule Poker.GameSession do
 
       %{new_deck: new_deck, players: [player | acc.players]}
     end)
-  end
-
-  @spec is_player_already_joined?(%GameState{}, binary()) :: boolean()
-  defp is_player_already_joined?(%GameState{} = game_state, player_id) do
-    not is_nil(Enum.find(game_state.players, fn player -> player.player_id == player_id end))
-  end
-
-  @spec add_player_to_state(%GameState{}, binary(), binary()) :: %GameState{}
-  defp add_player_to_state(%GameState{} = game_state, player_id, player_name) do
-    case game_state do
-      %GameState{game_stage: "LOBBY"} ->
-        Map.update!(game_state, :players, fn player_list ->
-          [
-            %Player{player_id: player_id, name: player_name, wallet: 20_000, hand: []}
-            | player_list
-          ]
-        end)
-
-      _ ->
-        game_state
-    end
   end
 
   # GenServer startup
