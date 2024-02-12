@@ -4,6 +4,7 @@ defmodule Poker.GameState do
   # See https://github.com/zblanco/many_ways_to_workflow/blob/master/op_otp/lib/op_otp/
 
   use Ecto.Schema
+  alias Poker.Card
   alias Poker.Player
   alias Poker.GameState
 
@@ -42,26 +43,32 @@ defmodule Poker.GameState do
 
   # Transformations
 
+  @spec set_pot(%GameState{}, integer()) :: %GameState{}
   def set_pot(%GameState{} = game_state, pot) do
     Map.update!(game_state, :pot, fn _ -> pot end)
   end
 
+  @spec set_most_recent_max_bet(%GameState{}, integer()) :: %GameState{}
   def set_most_recent_max_bet(%GameState{} = game_state, most_recent_max_bet) do
     Map.update!(game_state, :most_recent_max_bet, fn _ -> most_recent_max_bet end)
   end
 
+  @spec set_minimum_bet(%GameState{}, integer()) :: %GameState{}
   def set_minimum_bet(%GameState{} = game_state, minimum_bet) do
     Map.update!(game_state, :minimum_bet, fn _ -> minimum_bet end)
   end
 
+  @spec set_turn_number(%GameState{}, integer()) :: %GameState{}
   def set_turn_number(%GameState{} = game_state, turn_number) do
     Map.update!(game_state, :turn_number, fn _ -> turn_number end)
   end
 
+  @spec update_players(%GameState{}, [%Player{}]) :: %GameState{}
   def update_players(%GameState{} = game_state, players) do
     Map.update!(game_state, :players, fn _ -> players end)
   end
 
+  @spec update_dealer_deck(%GameState{}, [%Card{}]) :: %GameState{}
   def update_dealer_deck(%GameState{} = game_state, new_deck) do
     Map.update!(game_state, :dealer_deck, fn _ -> new_deck end)
   end
@@ -73,17 +80,16 @@ defmodule Poker.GameState do
 
   @spec add_player_to_state(%GameState{}, binary(), binary()) :: %GameState{}
   def add_player_to_state(%GameState{} = game_state, player_id, player_name) do
-    case game_state do
-      %GameState{game_stage: "LOBBY"} ->
-        Map.update!(game_state, :players, fn player_list ->
-          [
-            %Player{player_id: player_id, name: player_name, wallet: 20_000, hand: []}
-            | player_list
-          ]
-        end)
-
-      _ ->
-        game_state
+    if is_game_lobby?(game_state) do
+      Map.update!(game_state, :players, fn player_list ->
+        [
+          %Player{player_id: player_id, name: player_name, wallet: 20_000, hand: []}
+          | player_list
+        ]
+      end)
+    else
+      # Maybe return an atom or tuple stating the game isn't in a lobby?
+      game_state
     end
   end
 end
