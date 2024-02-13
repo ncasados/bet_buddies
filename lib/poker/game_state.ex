@@ -27,6 +27,15 @@ defmodule Poker.GameState do
 
   # Rules
 
+  @spec is_players_turn?(%GameState{}, %Player{}) :: boolean()
+  def is_players_turn?(%GameState{turn_number: turn_number}, %Player{number: player_turn_number})
+      when turn_number == player_turn_number,
+      do: true
+
+  def is_players_turn?(%GameState{turn_number: turn_number}, %Player{number: player_turn_number})
+      when turn_number != player_turn_number,
+      do: false
+
   @spec is_game_active?(%GameState{}) :: boolean()
   def is_game_active?(%GameState{game_stage: "ACTIVE"}), do: true
   def is_game_active?(%GameState{game_stage: _}), do: false
