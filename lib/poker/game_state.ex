@@ -27,12 +27,15 @@ defmodule Poker.GameState do
 
   # Rules
 
+  @spec is_game_active?(%GameState{}) :: boolean()
   def is_game_active?(%GameState{game_stage: "ACTIVE"}), do: true
   def is_game_active?(%GameState{game_stage: _}), do: false
 
+  @spec is_game_lobby?(%GameState{}) :: boolean()
   def is_game_lobby?(%GameState{game_stage: "LOBBY"}), do: true
   def is_game_lobby?(%GameState{game_stage: _}), do: false
 
+  @spec enough_players?(%GameState{}) :: boolean()
   def enough_players?(%GameState{players: players}) when length(players) >= 2, do: true
   def enough_players?(%GameState{players: players}) when length(players) < 2, do: false
 
