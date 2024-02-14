@@ -5,14 +5,17 @@ defmodule Poker.GameSession do
   alias Phoenix.PubSub
   alias Poker.Player
 
+  @spec call(pid(), binary(), binary()) :: %GameState{}
   def call(pid, player_id, amount) do
     GenServer.call(pid, {:call, player_id, amount})
   end
 
+  @spec fold(pid(), binary()) :: %GameState{}
   def fold(pid, player_id) do
     GenServer.call(pid, {:fold, player_id})
   end
 
+  @spec check(pid(), binary()) :: %GameState{}
   def check(pid, player_id) do
     GenServer.call(pid, {:check, player_id})
   end
