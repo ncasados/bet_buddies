@@ -135,16 +135,11 @@ defmodule Poker.GameSession do
           List.replace_at(game_state.players, player_index, updated_player)
 
         game_state =
-          game_state
-          |> Map.update!(:players, fn _ -> updated_players end)
-          |> Map.update!(:pot, fn pot -> pot + betting_player.wallet end)
-          |> Map.update!(:minimum_bet, fn _ -> amount * 2 end)
-          |> Map.update!(:most_recent_max_bet, fn _ ->
-            get_max_bet_from_players(updated_players)
-          end)
-          |> Map.update!(:turn_number, fn n ->
-            if n + 1 > length(updated_players), do: 1, else: n + 1
-          end)
+          GameState.update_players(game_state, updated_players)
+          |> GameState.add_to_pot(betting_player.wallet)
+          |> GameState.set_minimum_bet(amount * 2)
+          |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
+          |> GameState.increment_turn_number()
 
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -158,16 +153,11 @@ defmodule Poker.GameSession do
           List.replace_at(game_state.players, player_index, updated_player)
 
         game_state =
-          game_state
-          |> Map.update!(:players, fn _ -> updated_players end)
-          |> Map.update!(:pot, fn pot -> pot + amount end)
-          |> Map.update!(:minimum_bet, fn _ -> amount * 2 end)
-          |> Map.update!(:most_recent_max_bet, fn _ ->
-            get_max_bet_from_players(updated_players)
-          end)
-          |> Map.update!(:turn_number, fn n ->
-            if n + 1 > length(updated_players), do: 1, else: n + 1
-          end)
+          GameState.update_players(game_state, updated_players)
+          |> GameState.add_to_pot(amount)
+          |> GameState.set_minimum_bet(amount * 2)
+          |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
+          |> GameState.increment_turn_number()
 
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 

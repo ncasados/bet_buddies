@@ -55,6 +55,18 @@ defmodule Poker.GameState do
 
   # Transformations
 
+  @spec increment_turn_number(%GameState{}) :: %GameState{}
+  def increment_turn_number(%GameState{players: players} = game_state) do
+    Map.update!(game_state, :turn_number, fn n ->
+      if n + 1 > length(players), do: 1, else: n + 1
+    end)
+  end
+
+  @spec add_to_pot(%GameState{}, integer()) :: %GameState{}
+  def add_to_pot(%GameState{} = game_state, to_add) do
+    Map.update!(game_state, :pot, fn pot -> pot + to_add end)
+  end
+
   @spec set_pot(%GameState{}, integer()) :: %GameState{}
   def set_pot(%GameState{} = game_state, pot) do
     Map.update!(game_state, :pot, fn _ -> pot end)
