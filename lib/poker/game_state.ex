@@ -55,6 +55,15 @@ defmodule Poker.GameState do
 
   # Transformations
 
+  @spec update_player_by_index(%GameState{}, %Player{}, integer()) :: %GameState{}
+  def update_player_by_index(%GameState{} = game_state, updated_player, player_index) do
+    Map.update!(game_state, :players, fn players ->
+      List.update_at(players, player_index, fn _player ->
+        updated_player
+      end)
+    end)
+  end
+
   @spec increment_turn_number(%GameState{}) :: %GameState{}
   def increment_turn_number(%GameState{players: players} = game_state) do
     Map.update!(game_state, :turn_number, fn n ->
