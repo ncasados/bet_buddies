@@ -62,12 +62,9 @@ defmodule Poker.GameSession do
         List.replace_at(game_state.players, player_index, updated_player)
 
       game_state =
-        game_state
-        |> Map.update!(:players, fn _ -> updated_players end)
-        |> Map.update!(:pot, fn pot -> pot + amount end)
-        |> Map.update!(:turn_number, fn n ->
-          if n + 1 > length(updated_players), do: 1, else: n + 1
-        end)
+        GameState.update_players(game_state, updated_players)
+        |> GameState.add_to_pot(amount)
+        |> GameState.increment_turn_number()
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -79,8 +76,6 @@ defmodule Poker.GameSession do
 
   def handle_call({:fold, player_id}, _from, %GameState{} = game_state) do
     if GameState.is_game_active?(game_state) do
-      %GameState{players: players} = game_state
-
       %{player: _player, index: player_index} = find_player(game_state, player_id)
 
       game_state =
@@ -90,9 +85,7 @@ defmodule Poker.GameSession do
             Map.update!(player, :folded?, fn _ -> true end)
           end)
         end)
-        |> Map.update!(:turn_number, fn n ->
-          if n + 1 > length(players), do: 1, else: n + 1
-        end)
+        |> GameState.increment_turn_number()
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -104,13 +97,8 @@ defmodule Poker.GameSession do
 
   def handle_call({:check, _player_id}, _from, %GameState{} = game_state) do
     if GameState.is_game_active?(game_state) do
-      %GameState{players: players} = game_state
-
       game_state =
-        game_state
-        |> Map.update!(:turn_number, fn n ->
-          if n + 1 > length(players), do: 1, else: n + 1
-        end)
+        GameState.increment_turn_number(game_state)
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -128,7 +116,6 @@ defmodule Poker.GameSession do
       if betting_player.wallet < amount do
         updated_player =
           Map.update!(betting_player, :wallet, fn wallet -> wallet - wallet end)
-          # Problems expected
           |> Map.update!(:bet, fn _ -> amount end)
 
         updated_players =
