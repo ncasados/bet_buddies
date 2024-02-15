@@ -109,47 +109,52 @@ defmodule Poker.GameSession do
   end
 
   def handle_call({:bet, player_id, amount} = _msg, _from, %GameState{} = game_state) do
+    %{player: betting_player, index: player_index} = find_player(game_state, player_id)
+
     if GameState.is_game_active?(game_state) do
-      {amount, _} = if is_binary(amount), do: Integer.parse(amount)
-      %{player: betting_player, index: player_index} = find_player(game_state, player_id)
+      if GameState.is_players_turn?(game_state, betting_player) do
+        {amount, _} = if is_binary(amount), do: Integer.parse(amount)
 
-      if Player.has_enough_money?(betting_player, amount) do
-        updated_player =
-          Player.deduct_from_wallet(betting_player, amount)
-          |> Player.add_to_bet(amount)
+        if Player.has_enough_money?(betting_player, amount) do
+          updated_player =
+            Player.deduct_from_wallet(betting_player, amount)
+            |> Player.add_to_bet(amount)
 
-        updated_players =
-          GameState.update_player_by_index(game_state, updated_player, player_index)
-          |> Map.get(:players)
+          updated_players =
+            GameState.update_player_by_index(game_state, updated_player, player_index)
+            |> Map.get(:players)
 
-        game_state =
-          GameState.update_players(game_state, updated_players)
-          |> GameState.add_to_pot(amount)
-          |> GameState.set_minimum_bet(amount * 2)
-          |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
-          |> GameState.increment_turn_number()
+          game_state =
+            GameState.update_players(game_state, updated_players)
+            |> GameState.add_to_pot(amount)
+            |> GameState.set_minimum_bet(amount * 2)
+            |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
+            |> GameState.increment_turn_number()
 
-        PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+          PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
-        {:reply, game_state, game_state}
+          {:reply, game_state, game_state}
+        else
+          updated_player =
+            Map.update!(betting_player, :wallet, fn wallet -> wallet - wallet end)
+            |> Map.update!(:bet, fn _ -> amount end)
+
+          updated_players =
+            List.replace_at(game_state.players, player_index, updated_player)
+
+          game_state =
+            GameState.update_players(game_state, updated_players)
+            |> GameState.add_to_pot(betting_player.wallet)
+            |> GameState.set_minimum_bet(amount * 2)
+            |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
+            |> GameState.increment_turn_number()
+
+          PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+          {:reply, game_state, game_state}
+        end
       else
-        updated_player =
-          Map.update!(betting_player, :wallet, fn wallet -> wallet - wallet end)
-          |> Map.update!(:bet, fn _ -> amount end)
-
-        updated_players =
-          List.replace_at(game_state.players, player_index, updated_player)
-
-        game_state =
-          GameState.update_players(game_state, updated_players)
-          |> GameState.add_to_pot(betting_player.wallet)
-          |> GameState.set_minimum_bet(amount * 2)
-          |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
-          |> GameState.increment_turn_number()
-
-        PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
-
-        {:reply, game_state, game_state}
+        {:reply, :not_players_turn, game_state}
       end
     else
       {:reply, :game_not_active, game_state}
