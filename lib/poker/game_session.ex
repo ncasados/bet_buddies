@@ -51,27 +51,32 @@ defmodule Poker.GameSession do
         _from,
         %GameState{} = game_state
       ) do
+    %{player: calling_player, index: player_index} = find_player(game_state, player_id)
+
     if GameState.is_game_active?(game_state) do
-      {amount, _} = if is_binary(amount), do: Integer.parse(amount)
-      %{player: calling_player, index: player_index} = find_player(game_state, player_id)
+      if GameState.is_players_turn?(game_state, calling_player) do
+        {amount, _} = if is_binary(amount), do: Integer.parse(amount)
 
-      updated_player =
-        Map.update!(calling_player, :wallet, fn wallet ->
-          wallet - amount
-        end)
-        |> Map.update!(:bet, fn bet -> bet + amount end)
+        updated_player =
+          Map.update!(calling_player, :wallet, fn wallet ->
+            wallet - amount
+          end)
+          |> Map.update!(:bet, fn bet -> bet + amount end)
 
-      updated_players =
-        List.replace_at(game_state.players, player_index, updated_player)
+        updated_players =
+          List.replace_at(game_state.players, player_index, updated_player)
 
-      game_state =
-        GameState.update_players(game_state, updated_players)
-        |> GameState.add_to_pot(amount)
-        |> GameState.increment_turn_number()
+        game_state =
+          GameState.update_players(game_state, updated_players)
+          |> GameState.add_to_pot(amount)
+          |> GameState.increment_turn_number()
 
-      PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+        PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
-      {:reply, game_state, game_state}
+        {:reply, game_state, game_state}
+      else
+        {:reply, :not_players_turn, game_state}
+      end
     else
       {:reply, :game_not_active, game_state}
     end
