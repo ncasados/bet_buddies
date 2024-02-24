@@ -109,6 +109,37 @@ defmodule Poker.PokerTest do
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
+  test "joined player is not host" do
+    assert {:ok, pid} =
+             Poker.create_game("test_game_id", %Player{
+               player_id: "test_player_id",
+               name: "test_player"
+             })
+
+    assert %GameState{players: players} =
+             Poker.join_game("test_game_id", %Player{
+               player_id: "test_player_id_b",
+               name: "test_player_b"
+             })
+
+    assert %Player{is_host?: is_host} = List.first(players)
+    assert false == is_host
+    assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
+  end
+
+  test "first player added is host" do
+    assert {:ok, pid} =
+             Poker.create_game("test_game_id", %Player{
+               player_id: "test_player_id",
+               name: "test_player"
+             })
+
+    assert %Poker.GameState{players: players} = Poker.GameSession.read(pid)
+    assert %Player{is_host?: is_host} = List.first(players)
+    assert true == is_host
+    assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
+  end
+
   test "player is added to game when game is created" do
     assert {:ok, pid} =
              Poker.create_game("test_game_id", %Player{
