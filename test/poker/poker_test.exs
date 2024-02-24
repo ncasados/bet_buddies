@@ -5,6 +5,19 @@ defmodule Poker.PokerTest do
   alias Poker.Player
   use ExUnit.Case, async: true
 
+  test "create a sidepot" do
+    # Create a game
+    # Have three players join a game
+    # Player 1 should have 1000
+    # Player 2 should have 1000
+    # Player 3 should have 275
+    # Player 1 bets 1000
+    # Player 2 calls for 1000
+    # Player 3 all-ins for 275
+    # Main pot gains 825 from 275 * 3
+    # Side pot is created with the remainder 1175
+  end
+
   test "player cannot call while not their turn" do
     # Add test and logic to prevent players from acting while it's not their turn
     assert {:ok, pid} = Poker.create_game("test_game_id", "test_player_id_a", "test_player_a")
