@@ -35,9 +35,9 @@ defmodule Poker.GameSession do
     GenServer.call(pid, :read)
   end
 
-  @spec join(pid(), binary(), binary()) :: %GameState{}
-  def join(pid, player_id, player_name) do
-    GenServer.call(pid, {:join, %{"player_id" => player_id, "player_name" => player_name}})
+  @spec join(pid(), %Player{}) :: %GameState{}
+  def join(pid, player) do
+    GenServer.call(pid, {:join, player})
   end
 
   @impl true
@@ -205,13 +205,13 @@ defmodule Poker.GameSession do
   end
 
   def handle_call(
-        {:join, %{"player_id" => player_id, "player_name" => player_name}},
+        {:join, %Player{} = player},
         _from,
         %GameState{} = game_state
       ) do
-    case GameState.is_player_already_joined?(game_state, player_id) do
+    case GameState.is_player_already_joined?(game_state, player) do
       false ->
-        game_state = GameState.add_player_to_state(game_state, player_id, player_name)
+        game_state = GameState.add_player_to_state(game_state, player)
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
         {:reply, game_state, game_state}
 
@@ -252,9 +252,9 @@ defmodule Poker.GameSession do
 
     Enum.zip(player_numbers, players)
     |> Enum.map(fn {player_number, player} ->
-      Map.update!(player, :number, fn _ -> player_number end)
+      Map.update!(player, :turn_number, fn _ -> player_number end)
     end)
-    |> Enum.sort(&(&1.number <= &2.number))
+    |> Enum.sort(&(&1.turn_number <= &2.turn_number))
   end
 
   @spec find_player(%GameState{}, binary()) :: %{player: %Player{}, index: integer()}

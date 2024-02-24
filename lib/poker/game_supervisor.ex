@@ -4,7 +4,9 @@ defmodule Poker.GameSupervisor do
   alias Poker.GameState
   alias Poker.GameSession
 
-  def create_game(game_id, player_id, player_name) do
+  def create_game(game_id, %Player{} = player) do
+    player = Player.set_host(player)
+
     DynamicSupervisor.start_child(
       __MODULE__,
       {GameSession,
@@ -17,16 +19,7 @@ defmodule Poker.GameSupervisor do
          dealer_deck: Poker.new_shuffled_deck(),
          pot: 0,
          side_pot: 0,
-         players: [
-           %Player{
-             player_id: player_id,
-             name: player_name,
-             hand: [],
-             wallet: 20_000,
-             is_host?: true,
-             number: 1
-           }
-         ]
+         players: [player]
        }}
     )
   end

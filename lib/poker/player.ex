@@ -5,14 +5,14 @@ defmodule Poker.Player do
   embedded_schema do
     field :player_id, :string
     field :name, :string
-    field :wallet, :integer, default: 0
+    field :wallet, :integer, default: 20_000
     field :bet, :integer, default: 0
     field :hand, {:array, :map}, default: []
     field :is_host?, :boolean, default: false
     field :is_big_blind?, :boolean, default: false
     field :is_small_blind?, :boolean, default: false
     field :is_under_the_gun?, :boolean, default: false
-    field :number, :integer, default: 0
+    field :turn_number, :integer, default: 0
     field :folded?, :boolean, default: true
   end
 
@@ -24,6 +24,11 @@ defmodule Poker.Player do
   end
 
   # Transformations
+
+  @spec set_host(%Player{}) :: %Player{}
+  def set_host(%Player{} = player) do
+    Map.update!(player, :is_host?, fn _ -> true end)
+  end
 
   @spec add_to_bet(%Player{}, integer()) :: %Player{}
   def add_to_bet(%Player{} = player, amount_to_add) do

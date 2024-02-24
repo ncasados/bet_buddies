@@ -28,11 +28,15 @@ defmodule Poker.GameState do
   # Rules
 
   @spec is_players_turn?(%GameState{}, %Player{}) :: boolean()
-  def is_players_turn?(%GameState{turn_number: turn_number}, %Player{number: player_turn_number})
+  def is_players_turn?(%GameState{turn_number: turn_number}, %Player{
+        turn_number: player_turn_number
+      })
       when turn_number == player_turn_number,
       do: true
 
-  def is_players_turn?(%GameState{turn_number: turn_number}, %Player{number: player_turn_number})
+  def is_players_turn?(%GameState{turn_number: turn_number}, %Player{
+        turn_number: player_turn_number
+      })
       when turn_number != player_turn_number,
       do: false
 
@@ -48,8 +52,8 @@ defmodule Poker.GameState do
   def enough_players?(%GameState{players: players}) when length(players) >= 2, do: true
   def enough_players?(%GameState{players: players}) when length(players) < 2, do: false
 
-  @spec is_player_already_joined?(%GameState{}, binary()) :: boolean()
-  def is_player_already_joined?(%GameState{} = game_state, player_id) do
+  @spec is_player_already_joined?(%GameState{}, %Player{}) :: boolean()
+  def is_player_already_joined?(%GameState{} = game_state, %Player{player_id: player_id}) do
     not is_nil(Enum.find(game_state.players, fn player -> player.player_id == player_id end))
   end
 
@@ -111,12 +115,12 @@ defmodule Poker.GameState do
     Map.update!(game_state, :game_stage, fn _ -> "ACTIVE" end)
   end
 
-  @spec add_player_to_state(%GameState{}, binary(), binary()) :: %GameState{}
-  def add_player_to_state(%GameState{} = game_state, player_id, player_name) do
+  @spec add_player_to_state(%GameState{}, %Player{}) :: %GameState{}
+  def add_player_to_state(%GameState{} = game_state, %Player{} = player) do
     if is_game_lobby?(game_state) do
       Map.update!(game_state, :players, fn player_list ->
         [
-          %Player{player_id: player_id, name: player_name, wallet: 20_000, hand: []}
+          player
           | player_list
         ]
       end)

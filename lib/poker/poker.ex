@@ -1,4 +1,5 @@
 defmodule Poker do
+  alias Poker.Player
   alias Poker.GameState
   alias Poker.Card
   alias Ecto.UUID
@@ -41,15 +42,16 @@ defmodule Poker do
     Poker.GameSession.read(pid)
   end
 
-  @spec join_game(binary(), binary(), binary()) :: %GameState{}
-  def join_game(game_id, player_id, player_name) do
+  @spec join_game(binary(), %Player{}) :: %GameState{}
+  def join_game(game_id, %Player{} = player) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
-    Poker.GameSession.join(pid, player_id, player_name)
+    Poker.GameSession.join(pid, player)
   end
 
-  @spec create_game(binary(), binary(), binary()) :: :ignore | {:error, any()} | {:ok, pid()} | {:ok, pid(), any()}
-  def create_game(game_id, player_id, player_name) do
-    Poker.GameSupervisor.create_game(game_id, player_id, player_name)
+  @spec create_game(binary(), %Player{}) ::
+          :ignore | {:error, any()} | {:ok, pid()} | {:ok, pid(), any()}
+  def create_game(game_id, %Player{} = player) do
+    Poker.GameSupervisor.create_game(game_id, player)
   end
 
   @spec new_shuffled_deck() :: [%Card{}]

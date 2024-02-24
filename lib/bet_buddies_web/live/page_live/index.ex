@@ -1,4 +1,5 @@
 defmodule BetBuddiesWeb.PageLive.Index do
+  alias Poker.Player
   use Phoenix.LiveView
   use Phoenix.Component
 
@@ -15,8 +16,8 @@ defmodule BetBuddiesWeb.PageLive.Index do
         %{"create-game-button" => game_id, "player-name-field" => player_name} = _params,
         %{assigns: assigns} = socket
       ) do
-    Poker.create_game(game_id, assigns.player_id, player_name)
-
+    player = %Player{player_id: assigns.player_id, name: player_name}
+    Poker.create_game(game_id, player)
     {:noreply, push_navigate(socket, to: "/game/#{game_id}")}
   end
 
@@ -26,7 +27,8 @@ defmodule BetBuddiesWeb.PageLive.Index do
           _params,
         %{assigns: assigns} = socket
       ) do
-    Poker.join_game(game_id, assigns.player_id, player_name)
+    player = %Player{player_id: assigns.player_id, name: player_name}
+    Poker.join_game(game_id, player)
     socket = assign(socket, :game_id, game_id)
     {:noreply, push_navigate(socket, to: "/game/#{game_id}")}
   end

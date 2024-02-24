@@ -262,7 +262,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
             <% %{game_stage: "LOBBY"} -> %>
               <div></div>
             <% %{turn_number: turn_number} -> %>
-              <%= case turn_number == @player.number do %>
+              <%= case turn_number == @player.turn_number do %>
                 <% false -> %>
                   <div></div>
                 <% true -> %>
