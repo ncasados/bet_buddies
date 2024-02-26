@@ -19,7 +19,7 @@ defmodule Poker do
     Poker.GameSession.check(pid, player_id)
   end
 
-  @spec bet(binary(), binary(), integer()) :: %GameState{}
+  @spec bet(binary(), binary(), binary()) :: %GameState{}
   def bet(game_id, player_id, amount) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
     Poker.GameSession.bet(pid, player_id, amount)

@@ -20,7 +20,7 @@ defmodule Poker.GameSession do
     GenServer.call(pid, {:check, player_id})
   end
 
-  @spec bet(pid(), binary(), integer()) :: %GameState{}
+  @spec bet(pid(), binary(), binary()) :: %GameState{}
   def bet(pid, player_id, amount) do
     GenServer.call(pid, {:bet, player_id, amount})
   end
