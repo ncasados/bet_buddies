@@ -4,6 +4,11 @@ defmodule Poker do
   alias Poker.Card
   alias Ecto.UUID
 
+  def all_in(game_id, player_id) do
+    [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
+    Poker.GameSession.all_in(pid, player_id)
+  end
+
   def call(game_id, player_id, amount) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
     Poker.GameSession.call(pid, player_id, amount)

@@ -5,6 +5,11 @@ defmodule Poker.GameSession do
   alias Phoenix.PubSub
   alias Poker.Player
 
+  @spec all_in(pid(), binary()) :: %GameState{}
+  def all_in(pid, player_id) do
+    # Set up all in action
+  end
+
   @spec call(pid(), binary(), binary()) :: %GameState{}
   def call(pid, player_id, amount) do
     GenServer.call(pid, {:call, player_id, amount})
