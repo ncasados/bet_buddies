@@ -7,15 +7,36 @@ defmodule Poker.PokerTest do
 
   test "create a sidepot" do
     # Create a game
-    # Have three players join a game
     # Player 1 should have 1000
+    assert {:ok, pid} = Poker.create_game("test_game_id", %Player{
+      player_id: "test_player_id_a",
+      name: "test_player_a"
+    })
+    # Have three players join a game
     # Player 2 should have 1000
+    assert %GameState{} = Poker.join_game("test_game_id", %Player{
+      player_id: "test_player_id_b",
+      name: "test_player_b"
+    })
     # Player 3 should have 275
+    assert %GameState{} = Poker.join_game("test_game_id", %Player{
+      player_id: "test_player_id_c",
+      name: "test_player_c",
+      wallet: 275
+    })
+    # Start game
+    assert %GameState{players: players} = Poker.start_game("test_game_id")
     # Player 1 bets 1000
+    assert %Player{player_id: player_id} = Enum.at(players, 0)
+    %GameState{} = Poker.bet("test_game_id", player_id, "1000")
     # Player 2 calls for 1000
+    assert %Player{player_id: player_id} = Enum.at(players, 1)
+    %GameState{} = Poker.call("test_game_id", player_id, "1000")
     # Player 3 all-ins for 275
     # Main pot gains 825 from 275 * 3
     # Side pot is created with the remainder 1175
+    # Terminate game
+    assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
   test "player cannot call while not their turn" do
