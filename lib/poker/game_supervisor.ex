@@ -15,10 +15,6 @@ defmodule Poker.GameSupervisor do
          game_started_at: DateTime.utc_now(),
          password: "",
          game_stage: "LOBBY",
-         dealer_hand: [],
-         dealer_deck: Poker.new_shuffled_deck(),
-         pot: 0,
-         side_pot: 0,
          players: [player]
        }}
     )

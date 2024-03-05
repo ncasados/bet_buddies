@@ -7,6 +7,7 @@ defmodule Poker.GameState do
   alias Poker.Card
   alias Poker.Player
   alias Poker.GameState
+  alias Poker.HandLog
 
   embedded_schema do
     field :game_id, :string
@@ -15,17 +16,38 @@ defmodule Poker.GameState do
     field :game_stage, :string
     embeds_many :dealer_hand, Poker.Card
     embeds_many :dealer_deck, Poker.Card
-    field :pot, :integer
-    field :side_pot, :integer
+    field :main_pot, :integer, default: 0
+    field :side_pots, {:array, :map}, default: []
     embeds_many :players, Poker.Player
     field :turn_number, :integer
+    field :minimum_call, :integer, default: 0
     field :minimum_bet, :integer, default: 0
     field :most_recent_max_bet, :integer, default: 0
     field :big_blind, :integer, default: 800
     field :small_blind, :integer, default: 400
+    field :hand_log, {:array, :map}, default: []
+  end
+
+  # Queries
+
+  def get_players(%GameState{} = game_state) do
+    Map.get(game_state, :players)
   end
 
   # Rules
+
+  @spec create_sidepot?(%GameState{}) :: boolean()
+  def create_sidepot?(%GameState{} = game_state) do
+    players = get_players(game_state)
+    not_folded_players = Enum.reduce(players, 0, fn
+      %Player{} = player, acc -> if player.folded?, do: acc, else: acc + 1
+    end)
+    not_folded_players >= 3
+  end
+
+  def everyone_bet_the_same?(%GameState{} = game_state) do
+    game_state
+  end
 
   @spec is_players_turn?(%GameState{}, %Player{}) :: boolean()
   def is_players_turn?(%GameState{turn_number: turn_number}, %Player{
@@ -59,6 +81,11 @@ defmodule Poker.GameState do
 
   # Transformations
 
+  @spec add_to_hand_log(%GameState{}, %HandLog{}) :: %GameState{}
+  def add_to_hand_log(%GameState{hand_log: hand_log} = game_state, %HandLog{player_id: player_id, action: action, value: value}) do
+    Map.update!(game_state, :hand_log, fn _ -> hand_log ++ [%HandLog{player_id: player_id, action: action, value: value}] end)
+  end
+
   @spec update_player_by_index(%GameState{}, %Player{}, integer()) :: %GameState{}
   def update_player_by_index(%GameState{} = game_state, updated_player, player_index) do
     Map.update!(game_state, :players, fn players ->
@@ -75,14 +102,9 @@ defmodule Poker.GameState do
     end)
   end
 
-  @spec add_to_pot(%GameState{}, integer()) :: %GameState{}
-  def add_to_pot(%GameState{} = game_state, to_add) do
-    Map.update!(game_state, :pot, fn pot -> pot + to_add end)
-  end
-
-  @spec set_pot(%GameState{}, integer()) :: %GameState{}
-  def set_pot(%GameState{} = game_state, pot) do
-    Map.update!(game_state, :pot, fn _ -> pot end)
+  @spec add_to_main_pot(%GameState{}, integer()) :: %GameState{}
+  def add_to_main_pot(%GameState{} = game_state, to_add) do
+    Map.update!(game_state, :main_pot, fn pot -> pot + to_add end)
   end
 
   @spec set_most_recent_max_bet(%GameState{}, integer()) :: %GameState{}

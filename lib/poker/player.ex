@@ -13,7 +13,13 @@ defmodule Poker.Player do
     field :is_small_blind?, :boolean, default: false
     field :is_under_the_gun?, :boolean, default: false
     field :turn_number, :integer, default: 0
-    field :folded?, :boolean, default: true
+    field :folded?, :boolean, default: false
+  end
+
+  # Queries
+
+  def get_wallet(%Player{} = player) do
+    Map.get(player, :wallet)
   end
 
   # Rules
@@ -24,6 +30,10 @@ defmodule Poker.Player do
   end
 
   # Transformations
+
+  def all_in(%Player{} = player) do
+    Map.update!(player, :wallet, fn wallet -> wallet - wallet end)
+  end
 
   @spec set_host(%Player{}) :: %Player{}
   def set_host(%Player{} = player) do

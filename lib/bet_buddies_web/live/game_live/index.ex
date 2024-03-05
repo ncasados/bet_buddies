@@ -17,8 +17,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
       players: players,
       game_stage: game_stage,
       turn_number: turn_number,
-      pot: pot,
-      side_pot: side_pot,
+      main_pot: main_pot,
+      side_pots: side_pots,
       minimum_bet: minimum_bet,
       most_recent_max_bet: most_recent_max_bet
     } = game_state = Poker.get_game_state(game_id)
@@ -34,8 +34,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:other_players, other_players)
       |> assign(:bet_slider_value, minimum_bet)
       |> assign(:turn_number, turn_number)
-      |> assign(:pot, pot)
-      |> assign(:side_pot, side_pot)
+      |> assign(:main_pot, main_pot)
+      |> assign(:side_pots, if(side_pots == [], do: 0, else: side_pots))
       |> assign(:minimum_bet, minimum_bet)
       |> assign(:minimum_call, most_recent_max_bet - players_bet)
       |> assign(:all_in?, player.wallet <= minimum_bet)
@@ -82,7 +82,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       players: players,
       game_stage: game_stage,
       turn_number: turn_number,
-      pot: pot,
+      main_pot: main_pot,
       minimum_bet: minimum_bet,
       most_recent_max_bet: most_recent_max_bet
     } =
@@ -97,7 +97,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:player, player)
       |> assign(:other_players, other_players)
       |> assign(:turn_number, turn_number)
-      |> assign(:pot, pot)
+      |> assign(:main_pot, main_pot)
       |> assign(:minimum_bet, minimum_bet)
       |> assign(:minimum_call, most_recent_max_bet - players_bet)
       |> assign(:bet_slider_value, minimum_bet)
@@ -132,7 +132,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
               </div>
             </div>
           <% _ -> %>
-            <.dealer pot={@pot} side_pot={@side_pot} />
+            <.dealer main_pot={@main_pot} side_pots={@side_pots} />
         <% end %>
         <.player
           player={@player}
@@ -239,10 +239,10 @@ defmodule BetBuddiesWeb.GameLive.Index do
           </div>
           <div class="flex flex-row space-x-2 justify-evenly">
             <div class="flex flex-col">
-              Pot: $<%= @pot %>
+              Main Pot: $<%= @main_pot %>
             </div>
             <div class="flex flex-col">
-              Side Pot: $<%= @side_pot %>
+              Side Pot: $<%= @side_pots %>
             </div>
           </div>
         </div>

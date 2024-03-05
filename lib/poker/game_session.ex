@@ -4,10 +4,12 @@ defmodule Poker.GameSession do
   alias Poker.GameState
   alias Phoenix.PubSub
   alias Poker.Player
+  alias Poker.HandLog
 
   @spec all_in(pid(), binary()) :: %GameState{}
   def all_in(pid, player_id) do
     # Set up all in action
+    GenServer.call(pid, {:all_in, player_id})
   end
 
   @spec call(pid(), binary(), binary()) :: %GameState{}
@@ -51,6 +53,21 @@ defmodule Poker.GameSession do
   end
 
   @impl true
+  def handle_call({:all_in, player_id}, _from, %GameState{} = game_state) do
+    # If player is all in, and has less than other betters,
+    # create a side pot for the richer players.
+    %{player: player, index: index} = find_player(game_state, player_id)
+    # Get the players current wallet
+    _wallet = Player.get_wallet(player)
+    # Reduce player's wallet to 0
+    player = Player.all_in(player)
+    # Check if there are at least 3 players in the hand after the all in.
+    GameState.create_sidepot?(game_state)
+    # Update Player
+    %GameState{} = game_state = GameState.update_player_by_index(game_state, player, index)
+    {:reply, game_state, game_state}
+  end
+
   def handle_call(
         {:call, player_id, amount},
         _from,
@@ -73,8 +90,9 @@ defmodule Poker.GameSession do
 
         game_state =
           GameState.update_players(game_state, updated_players)
-          |> GameState.add_to_pot(amount)
+          |> GameState.add_to_main_pot(amount)
           |> GameState.increment_turn_number()
+          |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: "call", value: amount})
 
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -96,6 +114,7 @@ defmodule Poker.GameSession do
       game_state =
         GameState.update_player_by_index(game_state, updated_player, player_index)
         |> GameState.increment_turn_number()
+        |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: "fold", value: 0})
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -105,10 +124,11 @@ defmodule Poker.GameSession do
     end
   end
 
-  def handle_call({:check, _player_id}, _from, %GameState{} = game_state) do
+  def handle_call({:check, player_id}, _from, %GameState{} = game_state) do
     if GameState.is_game_active?(game_state) do
       game_state =
         GameState.increment_turn_number(game_state)
+        |> GameState.add_to_hand_log(%HandLog{player_id: player_id, value: 0, action: "check"})
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -136,10 +156,11 @@ defmodule Poker.GameSession do
 
           game_state =
             GameState.update_players(game_state, updated_players)
-            |> GameState.add_to_pot(amount)
+            |> GameState.add_to_main_pot(amount)
             |> GameState.set_minimum_bet(amount * 2)
             |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
             |> GameState.increment_turn_number()
+            |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: "bet", value: amount})
 
           PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -154,10 +175,11 @@ defmodule Poker.GameSession do
 
           game_state =
             GameState.update_players(game_state, updated_players)
-            |> GameState.add_to_pot(betting_player.wallet)
+            |> GameState.add_to_main_pot(betting_player.wallet)
             |> GameState.set_minimum_bet(amount * 2)
             |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
             |> GameState.increment_turn_number()
+            |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: "bet", value: amount})
 
           PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -177,8 +199,8 @@ defmodule Poker.GameSession do
         %GameState{big_blind: big_blind, small_blind: small_blind} = game_state
       ) do
     if GameState.enough_players?(game_state) do
-      original_deck = Map.get(game_state, :dealer_deck)
-      players = Map.get(game_state, :players)
+      original_deck = Poker.new_shuffled_deck()
+      players = GameState.get_players(game_state)
 
       blinded_and_labeled_players =
         players
@@ -195,7 +217,7 @@ defmodule Poker.GameSession do
         |> GameState.set_turn_number(1)
         |> GameState.set_minimum_bet(big_blind * 2)
         |> GameState.set_most_recent_max_bet(get_max_bet_from_players(ready_players))
-        |> GameState.set_pot(big_blind + small_blind)
+        |> GameState.add_to_main_pot(big_blind + small_blind)
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 

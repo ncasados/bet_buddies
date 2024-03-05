@@ -10,13 +10,15 @@ defmodule Poker.PokerTest do
     # Player 1 should have 1000
     assert {:ok, pid} = Poker.create_game("test_game_id", %Player{
       player_id: "test_player_id_a",
-      name: "test_player_a"
+      name: "test_player_a",
+      wallet: 2000
     })
     # Have three players join a game
     # Player 2 should have 1000
     assert %GameState{} = Poker.join_game("test_game_id", %Player{
       player_id: "test_player_id_b",
-      name: "test_player_b"
+      name: "test_player_b",
+      wallet: 2000
     })
     # Player 3 should have 275
     assert %GameState{} = Poker.join_game("test_game_id", %Player{
@@ -33,6 +35,8 @@ defmodule Poker.PokerTest do
     assert %Player{player_id: player_id} = Enum.at(players, 1)
     %GameState{} = Poker.call("test_game_id", player_id, "1000")
     # Player 3 all-ins for 275
+    assert %Player{player_id: player_id} = Enum.at(players, 2)
+    %GameState{} = Poker.all_in("test_game_id", player_id)
     # Main pot gains 825 from 275 * 3
     # Side pot is created with the remainder 1175
     # Terminate game
