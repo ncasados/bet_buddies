@@ -65,8 +65,20 @@ defmodule BetBuddiesWeb.GameLive.Index do
   end
 
   def handle_event("bet-changed", %{"bet-value" => bet_value} = _params, socket) do
-    socket = assign(socket, :bet_slider_value, bet_value)
-    {:noreply, socket}
+    wallet = to_string(socket.assigns.player.wallet)
+
+    socket =
+      assign(socket, :bet_slider_value, bet_value)
+
+    IO.inspect(wallet)
+
+    if bet_value == wallet do
+      IO.inspect("All in boy")
+      socket = assign(socket, :all_in?, true)
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("call", %{"value" => amount} = _params, socket) do
@@ -299,22 +311,19 @@ defmodule BetBuddiesWeb.GameLive.Index do
                         Call
                       </button>
                     </div>
-                    <%= if @all_in? do %>
-                    <% else %>
-                      <div class="flex flex-row justify-center space-x-2">
-                        <input
-                          id="bet-slider"
-                          name="bet-value"
-                          type="range"
-                          class="w-full"
-                          min={@minimum_bet}
-                          max={@player.wallet}
-                          value={@minimum_bet}
-                          phx-change="bet-changed"
-                        />
-                        <p id="slider-value" class="w-16">$<%= @bet_slider_value %></p>
-                      </div>
-                    <% end %>
+                    <div class="flex flex-row justify-center space-x-2">
+                      <input
+                        id="bet-slider"
+                        name="bet-value"
+                        type="range"
+                        class="w-full"
+                        min={@minimum_bet}
+                        max={@player.wallet}
+                        value={@minimum_bet}
+                        phx-change="bet-changed"
+                      />
+                      <p id="slider-value" class="w-16">$<%= @bet_slider_value %></p>
+                    </div>
                   </form>
               <% end %>
               <div class="flex flex-row space-x-2 justify-center">
