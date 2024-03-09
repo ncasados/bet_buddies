@@ -77,6 +77,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       socket = assign(socket, :all_in?, true)
       {:noreply, socket}
     else
+      socket = assign(socket, :all_in?, false)
       {:noreply, socket}
     end
   end
