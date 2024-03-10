@@ -295,14 +295,25 @@ defmodule BetBuddiesWeb.GameLive.Index do
                       >
                         Check
                       </button>
-                      <button
-                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
-                        onclick="event.preventDefault()"
-                        phx-click="bet"
-                        value={@bet_slider_value}
-                      >
-                        <%= if @all_in?, do: "All In", else: "Bet" %>
-                      </button>
+                      <%= if @all_in? do %>
+                        <button
+                          class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                          onclick="event.preventDefault()"
+                          phx-click="all_in"
+                          value={@bet_slider_value}
+                        >
+                        All In
+                        </button>
+                      <% else %>
+                        <button
+                          class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                          onclick="event.preventDefault()"
+                          phx-click="bet"
+                          value={@bet_slider_value}
+                        >
+                        Bet
+                        </button>
+                      <% end %>
                       <button
                         class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
                         onclick="event.preventDefault()"
