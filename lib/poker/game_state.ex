@@ -112,6 +112,11 @@ defmodule Poker.GameState do
     Map.update!(game_state, :most_recent_max_bet, fn _ -> most_recent_max_bet end)
   end
 
+  @spec set_minimum_call(%GameState{}, integer()) :: %GameState{}
+  def set_minimum_call(%GameState{} = game_state, minimum_call) do
+    Map.update!(game_state, :minimum_call, fn _ -> minimum_call end)
+  end
+
   @spec set_minimum_bet(%GameState{}, integer()) :: %GameState{}
   def set_minimum_bet(%GameState{} = game_state, minimum_bet) do
     Map.update!(game_state, :minimum_bet, fn _ -> minimum_bet end)

@@ -20,7 +20,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
       main_pot: main_pot,
       side_pots: side_pots,
       minimum_bet: minimum_bet,
-      most_recent_max_bet: most_recent_max_bet
+      most_recent_max_bet: most_recent_max_bet,
+      minimum_call: minimum_call
     } = game_state = Poker.get_game_state(game_id)
 
     %Player{bet: players_bet} = player = find_player(players, player_id)
@@ -37,11 +38,16 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:main_pot, main_pot)
       |> assign(:side_pots, if(side_pots == [], do: 0, else: side_pots))
       |> assign(:minimum_bet, minimum_bet)
-      |> assign(:minimum_call, most_recent_max_bet - players_bet)
-      |> assign(:all_in?, player.wallet <= minimum_bet)
+      |> assign(:minimum_call, minimum_call)
+      |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= minimum_call)
       |> assign(:game_state, game_state)
 
     {:ok, socket}
+  end
+
+  def handle_event("all_in", _params, socket) do
+    Poker.all_in(socket.assigns.game_id, socket.assigns.player.player_id)
+    {:noreply, socket}
   end
 
   def handle_event("fold", _params, socket) do
@@ -97,7 +103,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
       turn_number: turn_number,
       main_pot: main_pot,
       minimum_bet: minimum_bet,
-      most_recent_max_bet: most_recent_max_bet
+      most_recent_max_bet: most_recent_max_bet,
+      minimum_call: minimum_call
     } =
       Poker.get_game_state(game_id)
 
@@ -114,7 +121,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:minimum_bet, minimum_bet)
       |> assign(:minimum_call, most_recent_max_bet - players_bet)
       |> assign(:bet_slider_value, minimum_bet)
-      |> assign(:all_in?, player.wallet <= minimum_bet)
+      |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= minimum_call)
 
     {:noreply, socket}
   end
@@ -280,7 +287,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
                   <div></div>
                 <% true -> %>
                   <form>
-                    <div class="flex-row space-y-1">
+                    <div class="flex flex-row justify-center space-x-1">
                       <button
                         class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
                         onclick="event.preventDefault()"
@@ -302,7 +309,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
                           phx-click="all_in"
                           value={@bet_slider_value}
                         >
-                        All In
+                          All In
                         </button>
                       <% else %>
                         <button
@@ -311,17 +318,17 @@ defmodule BetBuddiesWeb.GameLive.Index do
                           phx-click="bet"
                           value={@bet_slider_value}
                         >
-                        Bet
+                          Bet
+                        </button>
+                        <button
+                          class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                          onclick="event.preventDefault()"
+                          phx-click="call"
+                          value={@minimum_call}
+                        >
+                          Call
                         </button>
                       <% end %>
-                      <button
-                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
-                        onclick="event.preventDefault()"
-                        phx-click="call"
-                        value={@minimum_call}
-                      >
-                        Call
-                      </button>
                     </div>
                     <div class="flex flex-row justify-center space-x-2">
                       <input

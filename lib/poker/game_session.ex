@@ -8,7 +8,6 @@ defmodule Poker.GameSession do
 
   @spec all_in(pid(), binary()) :: %GameState{}
   def all_in(pid, player_id) do
-    # Set up all in action
     GenServer.call(pid, {:all_in, player_id})
   end
 
@@ -58,13 +57,25 @@ defmodule Poker.GameSession do
     # create a side pot for the richer players.
     %{player: player, index: index} = find_player(game_state, player_id)
     # Get the players current wallet
-    _wallet = Player.get_wallet(player)
+    wallet = Player.get_wallet(player)
     # Reduce player's wallet to 0
     player = Player.all_in(player)
-    # Check if there are at least 3 players in the hand after the all in.
-    GameState.create_sidepot?(game_state)
     # Update Player
-    %GameState{} = game_state = GameState.update_player_by_index(game_state, player, index)
+    %GameState{} =
+      game_state =
+      GameState.update_player_by_index(game_state, player, index)
+      |> GameState.add_to_main_pot(wallet)
+      |> GameState.increment_turn_number()
+      |> GameState.add_to_hand_log(%HandLog{
+        player_id: player_id,
+        action: "All In",
+        value: wallet
+      })
+      |> GameState.set_minimum_call(wallet)
+      |> GameState.set_minimum_bet(wallet * 2)
+
+    PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
     {:reply, game_state, game_state}
   end
 
@@ -92,7 +103,11 @@ defmodule Poker.GameSession do
           GameState.update_players(game_state, updated_players)
           |> GameState.add_to_main_pot(amount)
           |> GameState.increment_turn_number()
-          |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: "call", value: amount})
+          |> GameState.add_to_hand_log(%HandLog{
+            player_id: player_id,
+            action: "call",
+            value: amount
+          })
 
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -160,7 +175,11 @@ defmodule Poker.GameSession do
             |> GameState.set_minimum_bet(amount * 2)
             |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
             |> GameState.increment_turn_number()
-            |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: "bet", value: amount})
+            |> GameState.add_to_hand_log(%HandLog{
+              player_id: player_id,
+              action: "bet",
+              value: amount
+            })
 
           PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -179,7 +198,11 @@ defmodule Poker.GameSession do
             |> GameState.set_minimum_bet(amount * 2)
             |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
             |> GameState.increment_turn_number()
-            |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: "bet", value: amount})
+            |> GameState.add_to_hand_log(%HandLog{
+              player_id: player_id,
+              action: "bet",
+              value: amount
+            })
 
           PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
