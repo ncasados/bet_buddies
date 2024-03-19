@@ -1,4 +1,5 @@
 defmodule Poker.Player do
+  alias Poker.HandLog
   alias Poker.Player
   use Ecto.Schema
 
@@ -6,9 +7,12 @@ defmodule Poker.Player do
     field :player_id, :string
     field :name, :string
     field :wallet, :integer, default: 20_000
-    field :bet, :integer, default: 0
+    field :contributed, :integer, default: 0
     field :hand, {:array, :map}, default: []
     field :is_host?, :boolean, default: false
+    embeds_one :last_action, HandLog
+    embeds_many :last_actions, HandLog
+    field :is_all_in?, :boolean, default: false
     field :is_big_blind?, :boolean, default: false
     field :is_small_blind?, :boolean, default: false
     field :is_under_the_gun?, :boolean, default: false
@@ -31,6 +35,14 @@ defmodule Poker.Player do
 
   # Transformations
 
+  def set_small_blind(%Player{} = player, bool) do
+    Map.update!(player, :is_small_blind?, fn _ -> bool end)
+  end
+
+  def set_big_blind(%Player{} = player, bool) do
+    Map.update!(player, :is_big_blind?, fn _ -> bool end)
+  end
+
   def all_in(%Player{} = player) do
     Map.update!(player, :wallet, fn wallet -> wallet - wallet end)
   end
@@ -42,7 +54,7 @@ defmodule Poker.Player do
 
   @spec add_to_bet(%Player{}, integer()) :: %Player{}
   def add_to_bet(%Player{} = player, amount_to_add) do
-    Map.update!(player, :bet, fn bet -> bet + amount_to_add end)
+    Map.update!(player, :contributed, fn contributed -> contributed + amount_to_add end)
   end
 
   @spec deduct_from_wallet(%Player{}, integer()) :: %Player{}

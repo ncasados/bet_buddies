@@ -21,10 +21,12 @@ defmodule BetBuddiesWeb.GameLive.Index do
       side_pots: side_pots,
       minimum_bet: minimum_bet,
       most_recent_max_bet: most_recent_max_bet,
-      minimum_call: minimum_call
+      minimum_call: minimum_call,
+      player_queue: player_queue,
+      dealer_hand: dealer_hand
     } = game_state = Poker.get_game_state(game_id)
 
-    %Player{bet: players_bet} = player = find_player(players, player_id)
+    %Player{contributed: players_bet} = player = find_player(players, player_id)
 
     other_players = players -- [player]
 
@@ -38,9 +40,10 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:main_pot, main_pot)
       |> assign(:side_pots, if(side_pots == [], do: 0, else: side_pots))
       |> assign(:minimum_bet, minimum_bet)
-      |> assign(:minimum_call, minimum_call)
+      |> assign(:minimum_call, GameState.get_max_bet_from_players(game_state) - players_bet)
       |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= minimum_call)
       |> assign(:game_state, game_state)
+      |> assign(:player_queue, player_queue)
 
     {:ok, socket}
   end
@@ -76,10 +79,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
     socket =
       assign(socket, :bet_slider_value, bet_value)
 
-    IO.inspect(wallet)
-
     if bet_value == wallet do
-      IO.inspect("All in boy")
       socket = assign(socket, :all_in?, true)
       {:noreply, socket}
     else
@@ -104,11 +104,13 @@ defmodule BetBuddiesWeb.GameLive.Index do
       main_pot: main_pot,
       minimum_bet: minimum_bet,
       most_recent_max_bet: most_recent_max_bet,
-      minimum_call: minimum_call
+      minimum_call: minimum_call,
+      player_queue: player_queue
     } =
+      game_state =
       Poker.get_game_state(game_id)
 
-    %Player{bet: players_bet} = player = find_player(players, player.player_id)
+    %Player{contributed: players_bet} = player = find_player(players, player.player_id)
     other_players = players -- [player]
 
     socket =
@@ -119,9 +121,10 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:turn_number, turn_number)
       |> assign(:main_pot, main_pot)
       |> assign(:minimum_bet, minimum_bet)
-      |> assign(:minimum_call, most_recent_max_bet - players_bet)
+      |> assign(:minimum_call, GameState.get_max_bet_from_players(game_state) - players_bet)
       |> assign(:bet_slider_value, minimum_bet)
       |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= minimum_call)
+      |> assign(:player_queue, player_queue)
 
     {:noreply, socket}
   end
@@ -162,6 +165,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
           minimum_bet={@minimum_bet}
           minimum_call={@minimum_call}
           all_in?={@all_in?}
+          player_queue={@player_queue}
         />
       </div>
     </div>
@@ -272,20 +276,40 @@ defmodule BetBuddiesWeb.GameLive.Index do
   end
 
   def player(assigns) do
-    ~H"""
-    <div class="flex flex-row justify-center space-x-2">
-      <div class="flex border shadow-lg rounded p-2 bg-white">
-        <div class="flex-col space-y-2">
-          <div class="flex-row text-center"><%= @player.name %></div>
-          <div class="flex-row bg-gray-300 rounded p-1 text-center">$<%= @player.wallet %></div>
-          <%= case assigns do %>
-            <% %{game_stage: "LOBBY"} -> %>
+    operating_player_id = assigns.player.player_id
+
+    player_id_for_whose_turn_it_is =
+      if assigns.player_queue == [] do
+        ""
+      else
+        List.first(assigns.player_queue).player_id
+      end
+
+    case assigns do
+      %{game_stage: "LOBBY"} ->
+        ~H"""
+        <!-- Lobby View -->
+        <div class="flex flex-row justify-center space-x-2">
+          <div class="flex border shadow-lg rounded p-2 bg-white">
+            <div class="flex-col space-y-2">
+              <div class="flex-row text-center"><%= @player.name %></div>
+              <div class="flex-row bg-gray-300 rounded p-1 text-center">$<%= @player.wallet %></div>
               <div></div>
-            <% %{turn_number: turn_number} -> %>
-              <%= case turn_number == @player.turn_number do %>
-                <% false -> %>
-                  <div></div>
-                <% true -> %>
+            </div>
+          </div>
+        </div>
+        """
+
+      %{game_stage: "ACTIVE"} ->
+        if operating_player_id == player_id_for_whose_turn_it_is do
+          if assigns.all_in? do
+            ~H"""
+            <!-- All In Player View -->
+            <div class="flex flex-row justify-center space-x-2">
+              <div class="flex border shadow-lg rounded p-2 bg-white">
+                <div class="flex-col space-y-2">
+                  <div class="flex-row text-center"><%= @player.name %></div>
+                  <div class="flex-row bg-gray-300 rounded p-1 text-center">$<%= @player.wallet %></div>
                   <form>
                     <div class="flex flex-row justify-center space-x-1">
                       <button
@@ -302,33 +326,14 @@ defmodule BetBuddiesWeb.GameLive.Index do
                       >
                         Check
                       </button>
-                      <%= if @all_in? do %>
-                        <button
-                          class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
-                          onclick="event.preventDefault()"
-                          phx-click="all_in"
-                          value={@bet_slider_value}
-                        >
-                          All In
-                        </button>
-                      <% else %>
-                        <button
-                          class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
-                          onclick="event.preventDefault()"
-                          phx-click="bet"
-                          value={@bet_slider_value}
-                        >
-                          Bet
-                        </button>
-                        <button
-                          class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
-                          onclick="event.preventDefault()"
-                          phx-click="call"
-                          value={@minimum_call}
-                        >
-                          Call
-                        </button>
-                      <% end %>
+                      <button
+                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                        onclick="event.preventDefault()"
+                        phx-click="all_in"
+                        value={@bet_slider_value}
+                      >
+                        All In
+                      </button>
                     </div>
                     <div class="flex flex-row justify-center space-x-2">
                       <input
@@ -344,16 +349,98 @@ defmodule BetBuddiesWeb.GameLive.Index do
                       <p id="slider-value" class="w-16">$<%= @bet_slider_value %></p>
                     </div>
                   </form>
-              <% end %>
-              <div class="flex flex-row space-x-2 justify-center">
-                <.card card={List.first(@player.hand)} />
-                <.card card={List.last(@player.hand)} />
+                  <div class="flex flex-row space-x-2 justify-center">
+                    <.card card={List.first(@player.hand)} />
+                    <.card card={List.last(@player.hand)} />
+                  </div>
+                </div>
               </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-    """
+            </div>
+            """
+          else
+            ~H"""
+            <!-- Not All In Player View -->
+            <div class="flex flex-row justify-center space-x-2">
+              <div class="flex border shadow-lg rounded p-2 bg-white">
+                <div class="flex-col space-y-2">
+                  <div class="flex-row text-center"><%= @player.name %></div>
+                  <div class="flex-row bg-gray-300 rounded p-1 text-center">$<%= @player.wallet %></div>
+                  <form>
+                    <div class="flex flex-row justify-center space-x-1">
+                      <button
+                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                        onclick="event.preventDefault()"
+                        phx-click="fold"
+                      >
+                        Fold
+                      </button>
+                      <button
+                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                        onclick="event.preventDefault()"
+                        phx-click="check"
+                      >
+                        Check
+                      </button>
+
+                      <button
+                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                        onclick="event.preventDefault()"
+                        phx-click="bet"
+                        value={@bet_slider_value}
+                      >
+                        Bet
+                      </button>
+                      <button
+                        class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
+                        onclick="event.preventDefault()"
+                        phx-click="call"
+                        value={@minimum_call}
+                      >
+                        Call
+                      </button>
+                    </div>
+                    <div class="flex flex-row justify-center space-x-2">
+                      <input
+                        id="bet-slider"
+                        name="bet-value"
+                        type="range"
+                        class="w-full"
+                        min={@minimum_bet}
+                        max={@player.wallet}
+                        value={@minimum_bet}
+                        phx-change="bet-changed"
+                      />
+                      <p id="slider-value" class="w-16">$<%= @bet_slider_value %></p>
+                    </div>
+                  </form>
+                  <div class="flex flex-row space-x-2 justify-center">
+                    <.card card={List.first(@player.hand)} />
+                    <.card card={List.last(@player.hand)} />
+                  </div>
+                </div>
+              </div>
+            </div>
+            """
+          end
+        else
+          ~H"""
+          <!-- Waiting Player View -->
+          <div class="flex flex-row justify-center space-x-2">
+            <div class="flex border shadow-lg rounded p-2 bg-white">
+              <div class="flex-col space-y-2">
+                <div class="flex-row text-center"><%= @player.name %></div>
+                <div class="flex-row bg-gray-300 rounded p-1 text-center">$<%= @player.wallet %></div>
+                <div></div>
+                <div class="flex flex-row space-x-2 justify-center">
+                  <.card card={List.first(@player.hand)} />
+                  <.card card={List.last(@player.hand)} />
+                </div>
+              </div>
+            </div>
+          </div>
+          """
+        end
+    end
   end
 
   def other_player(assigns) do

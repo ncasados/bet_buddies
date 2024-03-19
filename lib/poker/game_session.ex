@@ -91,18 +91,13 @@ defmodule Poker.GameSession do
         {amount, _} = if is_binary(amount), do: Integer.parse(amount)
 
         updated_player =
-          Map.update!(calling_player, :wallet, fn wallet ->
-            wallet - amount
-          end)
-          |> Map.update!(:bet, fn bet -> bet + amount end)
-
-        updated_players =
-          List.replace_at(game_state.players, player_index, updated_player)
+          Player.deduct_from_wallet(calling_player, amount)
+          |> Player.add_to_bet(amount)
 
         game_state =
-          GameState.update_players(game_state, updated_players)
+          GameState.update_player_in_players_list(game_state, updated_player)
           |> GameState.add_to_main_pot(amount)
-          |> GameState.increment_turn_number()
+          |> GameState.remove_player_from_queue(updated_player)
           |> GameState.add_to_hand_log(%HandLog{
             player_id: player_id,
             action: "call",
@@ -127,8 +122,8 @@ defmodule Poker.GameSession do
       updated_player = Player.set_folded(player, true)
 
       game_state =
-        GameState.update_player_by_index(game_state, updated_player, player_index)
-        |> GameState.increment_turn_number()
+        GameState.update_player_in_players_list(game_state, updated_player)
+        |> GameState.remove_player_from_queue(updated_player)
         |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: "fold", value: 0})
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
@@ -141,8 +136,10 @@ defmodule Poker.GameSession do
 
   def handle_call({:check, player_id}, _from, %GameState{} = game_state) do
     if GameState.is_game_active?(game_state) do
+      %{player: player, index: player_index} = find_player(game_state, player_id)
+
       game_state =
-        GameState.increment_turn_number(game_state)
+        GameState.remove_player_from_queue(game_state, player)
         |> GameState.add_to_hand_log(%HandLog{player_id: player_id, value: 0, action: "check"})
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
@@ -160,54 +157,27 @@ defmodule Poker.GameSession do
       if GameState.is_players_turn?(game_state, betting_player) do
         {amount, _} = if is_binary(amount), do: Integer.parse(amount)
 
-        if Player.has_enough_money?(betting_player, amount) do
-          updated_player =
-            Player.deduct_from_wallet(betting_player, amount)
-            |> Player.add_to_bet(amount)
+        updated_player =
+          Player.deduct_from_wallet(betting_player, amount)
+          |> Player.add_to_bet(amount)
 
-          updated_players =
-            GameState.update_player_by_index(game_state, updated_player, player_index)
-            |> Map.get(:players)
+        game_state =
+          GameState.update_player_in_players_list(game_state, updated_player)
+          |> GameState.set_player_queue(GameState.get_players(game_state))
+          |> GameState.remove_player_from_queue(updated_player)
+          |> GameState.add_to_main_pot(amount)
+          |> GameState.set_minimum_bet(amount * 2)
+          |> GameState.set_most_recent_max_bet(GameState.get_max_bet_from_players(game_state))
+          |> GameState.increment_turn_number()
+          |> GameState.add_to_hand_log(%HandLog{
+            player_id: player_id,
+            action: "bet",
+            value: amount
+          })
 
-          game_state =
-            GameState.update_players(game_state, updated_players)
-            |> GameState.add_to_main_pot(amount)
-            |> GameState.set_minimum_bet(amount * 2)
-            |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
-            |> GameState.increment_turn_number()
-            |> GameState.add_to_hand_log(%HandLog{
-              player_id: player_id,
-              action: "bet",
-              value: amount
-            })
+        PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
-          PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
-
-          {:reply, game_state, game_state}
-        else
-          updated_player =
-            Map.update!(betting_player, :wallet, fn wallet -> wallet - wallet end)
-            |> Map.update!(:bet, fn _ -> amount end)
-
-          updated_players =
-            List.replace_at(game_state.players, player_index, updated_player)
-
-          game_state =
-            GameState.update_players(game_state, updated_players)
-            |> GameState.add_to_main_pot(betting_player.wallet)
-            |> GameState.set_minimum_bet(amount * 2)
-            |> GameState.set_most_recent_max_bet(get_max_bet_from_players(updated_players))
-            |> GameState.increment_turn_number()
-            |> GameState.add_to_hand_log(%HandLog{
-              player_id: player_id,
-              action: "bet",
-              value: amount
-            })
-
-          PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
-
-          {:reply, game_state, game_state}
-        end
+        {:reply, game_state, game_state}
       else
         {:reply, :not_players_turn, game_state}
       end
@@ -222,25 +192,39 @@ defmodule Poker.GameSession do
         %GameState{big_blind: big_blind, small_blind: small_blind} = game_state
       ) do
     if GameState.enough_players?(game_state) do
-      original_deck = Poker.new_shuffled_deck()
-      players = GameState.get_players(game_state)
+      game_state =
+        GameState.set_dealer_deck(game_state, Poker.new_shuffled_deck())
+        |> GameState.shuffle_players()
+        |> GameState.draw_for_all_players()
 
-      blinded_and_labeled_players =
-        players
-        |> assign_number_to_players()
-        |> assign_big_blind_and_little_blind_to_last_two_players()
+      players =
+        GameState.get_players(game_state)
 
-      %{new_deck: new_deck, players: ready_players} =
-        draw_for_all_players(original_deck, blinded_and_labeled_players)
+      [big_blind_player, small_blind_player | the_rest] = Enum.reverse(players)
+
+      big_blind_player =
+        Player.set_big_blind(big_blind_player, true)
+        |> Player.deduct_from_wallet(big_blind)
+        |> Player.add_to_bet(big_blind)
+
+      small_blind_player =
+        Player.set_small_blind(small_blind_player, true)
+        |> Player.deduct_from_wallet(small_blind)
+        |> Player.add_to_bet(small_blind)
+
+      players = [big_blind_player, small_blind_player | the_rest]
+
+      player_queue = [small_blind_player | the_rest]
 
       game_state =
-        GameState.set_gamestate_to_active(game_state)
-        |> GameState.update_dealer_deck(new_deck)
-        |> GameState.update_players(ready_players)
-        |> GameState.set_turn_number(1)
+        game_state
+        |> GameState.set_player_queue(player_queue)
+        |> GameState.set_players(players)
+        |> GameState.set_gamestate_to_active()
         |> GameState.set_minimum_bet(big_blind * 2)
-        |> GameState.set_most_recent_max_bet(get_max_bet_from_players(ready_players))
+        |> GameState.set_most_recent_max_bet(get_max_bet_from_players(player_queue))
         |> GameState.add_to_main_pot(big_blind + small_blind)
+        |> GameState.set_turn_number(1)
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -271,8 +255,10 @@ defmodule Poker.GameSession do
   end
 
   def get_max_bet_from_players(players) do
-    [first_player | _tail] = Enum.sort_by(players, fn %Player{bet: bet} -> bet end, :desc)
-    Map.get(first_player, :bet)
+    [first_player | _tail] =
+      Enum.sort_by(players, fn %Player{contributed: contributed} -> contributed end, :desc)
+
+    Map.get(first_player, :contributed)
   end
 
   defp assign_big_blind_and_little_blind_to_last_two_players(players) do
@@ -287,12 +273,12 @@ defmodule Poker.GameSession do
     player1 =
       Map.update!(player1, :is_big_blind?, fn _ -> true end)
       |> Map.update!(:wallet, fn wallet -> wallet - 800 end)
-      |> Map.update!(:bet, fn bet -> bet + big_blind_bet end)
+      |> Map.update!(:contributed, fn contributed -> contributed + big_blind_bet end)
 
     player2 =
       Map.update!(player2, :is_small_blind?, fn _ -> true end)
       |> Map.update!(:wallet, fn wallet -> wallet - 400 end)
-      |> Map.update!(:bet, fn bet -> bet + small_blind_bet end)
+      |> Map.update!(:contributed, fn contributed -> contributed + small_blind_bet end)
 
     [player1 | [player2 | the_rest]]
   end
