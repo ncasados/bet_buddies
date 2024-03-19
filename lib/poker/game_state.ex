@@ -137,10 +137,10 @@ defmodule Poker.GameState do
   def set_flop_flopped(%GameState{} = game_state) do
   end
 
-  def move_to_next_stage(%GameState{flop_dealt?: flop_dealt} = game_state) do
+  def move_to_next_stage(%GameState{} = game_state) do
     if no_players_in_queue?(game_state) do
-      case %{flop: flop_dealt, turn: turn_dealt, river: river_dealt} do
-        %{flop: false, turn: false, river: false} ->
+      case game_state do
+        %GameState{flop_dealt?: false, turn_dealt?: false, river_dealt?: false} ->
           GameState.draw_flop(game_state)
       end
     end
