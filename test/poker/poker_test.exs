@@ -8,24 +8,30 @@ defmodule Poker.PokerTest do
   test "create a sidepot" do
     # Create a game
     # Player 1 should have 1000
-    assert {:ok, pid} = Poker.create_game("test_game_id", %Player{
-      player_id: "test_player_id_a",
-      name: "test_player_a",
-      wallet: 2000
-    })
+    assert {:ok, pid} =
+             Poker.create_game("test_game_id", %Player{
+               player_id: "test_player_id_a",
+               name: "test_player_a",
+               wallet: 2000
+             })
+
     # Have three players join a game
     # Player 2 should have 1000
-    assert %GameState{} = Poker.join_game("test_game_id", %Player{
-      player_id: "test_player_id_b",
-      name: "test_player_b",
-      wallet: 2000
-    })
+    assert %GameState{} =
+             Poker.join_game("test_game_id", %Player{
+               player_id: "test_player_id_b",
+               name: "test_player_b",
+               wallet: 2000
+             })
+
     # Player 3 should have 275
-    assert %GameState{} = Poker.join_game("test_game_id", %Player{
-      player_id: "test_player_id_c",
-      name: "test_player_c",
-      wallet: 275
-    })
+    assert %GameState{} =
+             Poker.join_game("test_game_id", %Player{
+               player_id: "test_player_id_c",
+               name: "test_player_c",
+               wallet: 275
+             })
+
     # Start game
     assert %GameState{players: players} = Poker.start_game("test_game_id")
     # Player 1 bets 1000
@@ -43,6 +49,7 @@ defmodule Poker.PokerTest do
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
+  @tag run: true
   test "player cannot call while not their turn" do
     # Add test and logic to prevent players from acting while it's not their turn
     assert {:ok, pid} =
@@ -58,11 +65,12 @@ defmodule Poker.PokerTest do
              })
 
     assert %GameState{players: players} = Poker.start_game("test_game_id")
-    assert %Player{player_id: player_id} = List.last(players)
+    assert %Player{player_id: player_id} = List.first(players)
     assert :not_players_turn = Poker.call("test_game_id", player_id, "200")
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
+  @tag run: true
   test "player cannot bet while not their turn" do
     # Add test and logic to prevent players from acting while it's not their turn
     assert {:ok, pid} =
@@ -78,11 +86,12 @@ defmodule Poker.PokerTest do
              })
 
     assert %GameState{players: players} = Poker.start_game("test_game_id")
-    assert %Player{player_id: player_id} = List.last(players)
+    assert %Player{player_id: player_id} = List.first(players)
     assert :not_players_turn = Poker.bet("test_game_id", player_id, "200")
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
+  @tag run: true
   test "player cannot call while game is not started" do
     assert {:ok, pid} =
              Poker.create_game("test_game_id", %Player{
@@ -120,6 +129,7 @@ defmodule Poker.PokerTest do
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
+  @tag run: true
   test "player starts with 20,000" do
     assert {:ok, pid} =
              Poker.create_game("test_game_id", %Player{
@@ -134,6 +144,7 @@ defmodule Poker.PokerTest do
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
+  @tag run: true
   test "joined player is not host" do
     assert {:ok, pid} =
              Poker.create_game("test_game_id", %Player{
@@ -152,6 +163,7 @@ defmodule Poker.PokerTest do
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
+  @tag run: true
   test "first player added is host" do
     assert {:ok, pid} =
              Poker.create_game("test_game_id", %Player{
@@ -165,6 +177,7 @@ defmodule Poker.PokerTest do
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
+  @tag run: true
   test "player is added to game when game is created" do
     assert {:ok, pid} =
              Poker.create_game("test_game_id", %Player{
@@ -177,6 +190,7 @@ defmodule Poker.PokerTest do
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
+  @tag run: true
   test "game can be created" do
     assert {:ok, pid} =
              Poker.create_game("test_game_id", %Player{
@@ -187,10 +201,12 @@ defmodule Poker.PokerTest do
     assert :ok = DynamicSupervisor.terminate_child(Poker.GameSupervisor, pid)
   end
 
+  @tag run: true
   test "Two shuffled decks are not the same" do
     assert Poker.new_shuffled_deck() != Poker.new_shuffled_deck()
   end
 
+  @tag run: true
   test "Draw two cards" do
     %{drawn_cards: drawn_cards, new_deck: new_deck} =
       Poker.new_shuffled_deck()
