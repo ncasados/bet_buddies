@@ -28,9 +28,9 @@ defmodule Poker.GameState do
     field :big_blind, :integer, default: 800
     field :small_blind, :integer, default: 400
     field :hand_log, {:array, :map}, default: []
-    field :flop_dealt?, :boolean
-    field :turn_dealt?, :boolean
-    field :river_dealt?, :boolean
+    field :flop_dealt?, :boolean, default: false
+    field :turn_dealt?, :boolean, default: false
+    field :river_dealt?, :boolean, default: false
   end
 
   # Queries
