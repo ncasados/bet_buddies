@@ -18,6 +18,7 @@ defmodule Poker.Player do
     field :is_under_the_gun?, :boolean, default: false
     field :turn_number, :integer, default: 0
     field :folded?, :boolean, default: false
+    field :funny_collateral, :string
   end
 
   # Queries
@@ -34,6 +35,11 @@ defmodule Poker.Player do
   end
 
   # Transformations
+
+  @spec add_to_wallet(%Player{}, integer()) :: %Player{}
+  def add_to_wallet(%Player{} = player, amount) do
+    Map.update!(player, :wallet, fn wallet -> wallet + amount end)
+  end
 
   def set_small_blind(%Player{} = player, bool) do
     Map.update!(player, :is_small_blind?, fn _ -> bool end)

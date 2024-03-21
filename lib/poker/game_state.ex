@@ -35,6 +35,30 @@ defmodule Poker.GameState do
 
   # Queries
 
+  @spec get_main_pot(%GameState{}) :: integer()
+  def get_main_pot(%GameState{} = game_state) do
+    Map.get(game_state, :main_pot)
+  end
+
+  # Remember to remove index part
+  @spec find_player(%GameState{}, binary()) :: %{player: %Player{}, index: integer()}
+  def find_player(%GameState{} = game_state, player_id) do
+    %{
+      player: Enum.find(game_state.players, fn player -> player.player_id == player_id end),
+      index: Enum.find_index(game_state.players, fn player -> player.player_id == player_id end)
+    }
+  end
+
+  @spec get_the_one_player_who_didnt_fold(%GameState{}) :: %Player{}
+  def get_the_one_player_who_didnt_fold(%GameState{} = game_state) do
+    players = GameState.get_players(game_state)
+
+    Enum.reject(players, fn %Player{} = player ->
+      player.folded?
+    end)
+    |> List.first()
+  end
+
   @spec get_small_blind_player(%GameState{}) :: %Player{}
   def get_small_blind_player(%GameState{} = game_state) do
     Map.get(game_state, :players)
@@ -72,6 +96,22 @@ defmodule Poker.GameState do
 
   # Rules
 
+  @spec all_but_one_folded?(%GameState{}) :: boolean()
+  def all_but_one_folded?(%GameState{} = game_state) do
+    players = GameState.get_players(game_state)
+
+    one = 1
+
+    count_of_still_in_players =
+      Enum.reject(players, fn %Player{} = player ->
+        player.folded?
+      end)
+      |> Enum.count()
+
+    count_of_still_in_players == one
+  end
+
+  @spec no_players_in_queue?(%GameState{}) :: boolean()
   def no_players_in_queue?(%GameState{} = game_state) do
     empty = 0
 
@@ -122,10 +162,51 @@ defmodule Poker.GameState do
 
   # Transformations
 
+  # Spec that I want
+  @spec determine_winner(%GameState{}) :: %Player{}
+  def determine_winner(%GameState{} = game_state) do
+    # To do build out the card evaluation stuff
+    winning_player = %Player{}
+  end
+
+  @spec set_main_pot(%GameState{}, integer()) :: %GameState{}
+  def set_main_pot(%GameState{} = game_state, amount) do
+    Map.update!(game_state, :main_pot, fn _ -> amount end)
+  end
+
+  @spec give_main_pot_to_player(%GameState{}, %Player{}) :: %GameState{}
+  def give_main_pot_to_player(%GameState{} = game_state, %Player{} = player) do
+    main_pot = GameState.get_main_pot(game_state)
+    player_with_winnings = Player.add_to_wallet(player, main_pot)
+
+    GameState.update_player_in_players_list(game_state, player_with_winnings)
+    |> GameState.set_main_pot(0)
+  end
+
+  @spec add_to_dealer_hand(%GameState{}, list(%Card{})) :: %GameState{}
   def add_to_dealer_hand(%GameState{} = game_state, cards) do
     Map.update!(game_state, :dealer_hand, fn prior_hand -> prior_hand ++ cards end)
   end
 
+  @spec draw_river(%GameState{}) :: %GameState{}
+  def draw_river(%GameState{} = game_state) do
+    dealer_deck = Map.get(game_state, :dealer_deck)
+    %{drawn_cards: drawn_cards, new_deck: new_deck} = Poker.draw(dealer_deck, 1)
+
+    GameState.set_dealer_deck(game_state, new_deck)
+    |> GameState.add_to_dealer_hand(drawn_cards)
+  end
+
+  @spec draw_turn(%GameState{}) :: %GameState{}
+  def draw_turn(%GameState{} = game_state) do
+    dealer_deck = Map.get(game_state, :dealer_deck)
+    %{drawn_cards: drawn_cards, new_deck: new_deck} = Poker.draw(dealer_deck, 1)
+
+    GameState.set_dealer_deck(game_state, new_deck)
+    |> GameState.add_to_dealer_hand(drawn_cards)
+  end
+
+  @spec draw_flop(%GameState{}) :: %GameState{}
   def draw_flop(%GameState{} = game_state) do
     dealer_deck = Map.get(game_state, :dealer_deck)
     %{drawn_cards: drawn_cards, new_deck: new_deck} = Poker.draw(dealer_deck, 3)
@@ -134,18 +215,54 @@ defmodule Poker.GameState do
     |> GameState.add_to_dealer_hand(drawn_cards)
   end
 
-  def set_flop_flopped(%GameState{} = game_state) do
+  @spec set_river_dealt(%GameState{}, boolean()) :: %GameState{}
+  def set_river_dealt(%GameState{} = game_state, boolean) do
+    Map.update!(game_state, :river_dealt?, fn _ -> boolean end)
   end
 
-  def move_to_next_stage(%GameState{} = game_state) do
-    if no_players_in_queue?(game_state) do
-      case game_state do
-        %GameState{flop_dealt?: false, turn_dealt?: false, river_dealt?: false} ->
-          GameState.draw_flop(game_state)
+  @spec set_turn_dealt(%GameState{}, boolean()) :: %GameState{}
+  def set_turn_dealt(%GameState{} = game_state, boolean) do
+    Map.update!(game_state, :turn_dealt?, fn _ -> boolean end)
+  end
+
+  @spec set_flop_dealt(%GameState{}, boolean()) :: %GameState{}
+  def set_flop_dealt(%GameState{} = game_state, boolean) do
+    Map.update!(game_state, :flop_dealt?, fn _ -> boolean end)
+  end
+
+  @spec move_to_next_stage(%GameState{}) :: %GameState{}
+  def move_to_next_stage(%GameState{players: players} = game_state) do
+    if all_but_one_folded?(game_state) do
+      # Distribute winnings
+      player = get_the_one_player_who_didnt_fold(game_state)
+      game_state = give_main_pot_to_player(game_state, player)
+      game_state
+    else
+      if no_players_in_queue?(game_state) do
+        case game_state do
+          %GameState{flop_dealt?: false, turn_dealt?: false, river_dealt?: false} ->
+            GameState.draw_flop(game_state)
+            |> GameState.set_player_queue(players)
+            |> GameState.set_flop_dealt(true)
+
+          %GameState{flop_dealt?: true, turn_dealt?: false, river_dealt?: false} ->
+            GameState.draw_turn(game_state)
+            |> GameState.set_player_queue(players)
+            |> GameState.set_turn_dealt(true)
+
+          %GameState{flop_dealt?: true, turn_dealt?: true, river_dealt?: false} ->
+            GameState.draw_turn(game_state)
+            |> GameState.set_player_queue(players)
+            |> GameState.set_river_dealt(true)
+            |> GameState.determine_winner()
+        end
+      else
+        game_state
       end
     end
   end
 
+  @spec remove_player_from_queue(%GameState{}, %Player{}) :: %GameState{}
   def remove_player_from_queue(%GameState{} = game_state, %Player{} = folding_player) do
     Map.update!(game_state, :player_queue, fn player_queue ->
       Enum.filter(player_queue, fn %Player{} = player ->
@@ -154,11 +271,12 @@ defmodule Poker.GameState do
     end)
   end
 
+  @spec set_dealer_deck(%GameState{}, list(%Card{})) :: %GameState{}
   def set_dealer_deck(%GameState{} = game_state, deck) do
     Map.update!(game_state, :dealer_deck, fn _ -> deck end)
-  end >
-    @spec draw_for_all_players(%GameState{}) :: %GameState{}
+  end
 
+  @spec draw_for_all_players(%GameState{}) :: %GameState{}
   def draw_for_all_players(%GameState{} = game_state) do
     players = Map.get(game_state, :players)
     original_deck = Map.get(game_state, :dealer_deck)

@@ -332,31 +332,31 @@ defmodule BetBuddiesWeb.GameLive.Index do
         """
 
       0 ->
-    ~H"""
-    <div class="flex flex-row justify-start sm:justify-center overflow-x-auto space-x-2">
-      <div class="flex border shadow-lg rounded p-2 bg-white">
-        <div class="flex-col space-y-2">
-          <div class="flex-row text-center">Dealer</div>
-          <div class="flex flex-row space-x-2 justify-center">
-            <.card_back />
-            <.card_back />
-            <.card_back />
-            <.card_back />
-            <.card_back />
-          </div>
-          <div class="flex flex-row space-x-2 justify-evenly">
-            <div class="flex flex-col">
-              Main Pot: $<%= @main_pot %>
-            </div>
-            <div class="flex flex-col">
-              Side Pot: $<%= @side_pots %>
+        ~H"""
+        <div class="flex flex-row justify-start sm:justify-center overflow-x-auto space-x-2">
+          <div class="flex border shadow-lg rounded p-2 bg-white">
+            <div class="flex-col space-y-2">
+              <div class="flex-row text-center">Dealer</div>
+              <div class="flex flex-row space-x-2 justify-center">
+                <.card_back />
+                <.card_back />
+                <.card_back />
+                <.card_back />
+                <.card_back />
+              </div>
+              <div class="flex flex-row space-x-2 justify-evenly">
+                <div class="flex flex-col">
+                  Main Pot: $<%= @main_pot %>
+                </div>
+                <div class="flex flex-col">
+                  Side Pot: $<%= @side_pots %>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-    """
-  end
+        """
+    end
   end
 
   def player(assigns) do

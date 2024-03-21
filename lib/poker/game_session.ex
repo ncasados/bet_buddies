@@ -103,6 +103,7 @@ defmodule Poker.GameSession do
             action: "call",
             value: amount
           })
+          |> GameState.move_to_next_stage()
 
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -125,6 +126,7 @@ defmodule Poker.GameSession do
         GameState.update_player_in_players_list(game_state, updated_player)
         |> GameState.remove_player_from_queue(updated_player)
         |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: "fold", value: 0})
+        |> GameState.move_to_next_stage()
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -136,11 +138,12 @@ defmodule Poker.GameSession do
 
   def handle_call({:check, player_id}, _from, %GameState{} = game_state) do
     if GameState.is_game_active?(game_state) do
-      %{player: player, index: player_index} = find_player(game_state, player_id)
+      %{player: player} = find_player(game_state, player_id)
 
       game_state =
         GameState.remove_player_from_queue(game_state, player)
         |> GameState.add_to_hand_log(%HandLog{player_id: player_id, value: 0, action: "check"})
+        |> GameState.move_to_next_stage()
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -151,7 +154,7 @@ defmodule Poker.GameSession do
   end
 
   def handle_call({:bet, player_id, amount} = _msg, _from, %GameState{} = game_state) do
-    %{player: betting_player, index: player_index} = find_player(game_state, player_id)
+    %{player: betting_player} = find_player(game_state, player_id)
 
     if GameState.is_game_active?(game_state) do
       if GameState.is_players_turn?(game_state, betting_player) do
@@ -261,63 +264,12 @@ defmodule Poker.GameSession do
     Map.get(first_player, :contributed)
   end
 
-  defp assign_big_blind_and_little_blind_to_last_two_players(players) do
-    # assing big blind and little blind to players.
-    # big_blind_player = Map.update!(player_0, :is_big_blind?, fn _ -> true end)
-    # small_blind_player = Map.update!(player_1, :is_small_blind?, fn _ -> true end)
-    [player1 | [player2 | the_rest]] = Enum.reverse(players)
-
-    big_blind_bet = 800
-    small_blind_bet = 400
-
-    player1 =
-      Map.update!(player1, :is_big_blind?, fn _ -> true end)
-      |> Map.update!(:wallet, fn wallet -> wallet - 800 end)
-      |> Map.update!(:contributed, fn contributed -> contributed + big_blind_bet end)
-
-    player2 =
-      Map.update!(player2, :is_small_blind?, fn _ -> true end)
-      |> Map.update!(:wallet, fn wallet -> wallet - 400 end)
-      |> Map.update!(:contributed, fn contributed -> contributed + small_blind_bet end)
-
-    [player1 | [player2 | the_rest]]
-  end
-
-  defp assign_number_to_players(players) do
-    player_numbers = Enum.shuffle(1..length(players))
-
-    Enum.zip(player_numbers, players)
-    |> Enum.map(fn {player_number, player} ->
-      Map.update!(player, :turn_number, fn _ -> player_number end)
-    end)
-    |> Enum.sort(&(&1.turn_number <= &2.turn_number))
-  end
-
   @spec find_player(%GameState{}, binary()) :: %{player: %Player{}, index: integer()}
   defp find_player(%GameState{} = game_state, player_id) do
     %{
       player: Enum.find(game_state.players, fn player -> player.player_id == player_id end),
       index: Enum.find_index(game_state.players, fn player -> player.player_id == player_id end)
     }
-  end
-
-  @spec draw_for_all_players([%Card{}], [%Player{}]) :: %{
-          new_deck: [%Card{}],
-          players: [%Player{}]
-        }
-  defp draw_for_all_players(deck, players) do
-    Enum.reduce(players, %{new_deck: deck, players: []}, fn player, acc ->
-      %{new_deck: new_deck, drawn_cards: drawn_cards} = Poker.draw(acc.new_deck, 2)
-
-      player =
-        Map.update!(player, :hand, fn prior_hand ->
-          Enum.reduce(drawn_cards, prior_hand, fn new_card, prior_hand ->
-            [new_card | prior_hand]
-          end)
-        end)
-
-      %{new_deck: new_deck, players: [player | acc.players]}
-    end)
   end
 
   # GenServer startup
