@@ -44,6 +44,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= minimum_call)
       |> assign(:game_state, game_state)
       |> assign(:player_queue, player_queue)
+      |> assign(:dealer_hand, dealer_hand)
 
     {:ok, socket}
   end
@@ -105,7 +106,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
       minimum_bet: minimum_bet,
       most_recent_max_bet: most_recent_max_bet,
       minimum_call: minimum_call,
-      player_queue: player_queue
+      player_queue: player_queue,
+      dealer_hand: dealer_hand
     } =
       game_state =
       Poker.get_game_state(game_id)
@@ -125,6 +127,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:bet_slider_value, minimum_bet)
       |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= minimum_call)
       |> assign(:player_queue, player_queue)
+      |> assign(:dealer_hand, dealer_hand)
 
     {:noreply, socket}
   end
@@ -155,7 +158,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
               </div>
             </div>
           <% _ -> %>
-            <.dealer main_pot={@main_pot} side_pots={@side_pots} />
+            <.dealer main_pot={@main_pot} side_pots={@side_pots} dealer_hand={@dealer_hand} />
         <% end %>
         <.player
           player={@player}
@@ -249,6 +252,86 @@ defmodule BetBuddiesWeb.GameLive.Index do
   end
 
   def dealer(assigns) do
+    case length(assigns.dealer_hand) do
+      5 ->
+        ~H"""
+        <div class="flex flex-row justify-start sm:justify-center overflow-x-auto space-x-2">
+          <div class="flex border shadow-lg rounded p-2 bg-white">
+            <div class="flex-col space-y-2">
+              <div class="flex-row text-center">Dealer</div>
+              <div class="flex flex-row space-x-2 justify-center">
+                <.card card={Enum.at(assigns.dealer_hand, 0)} />
+                <.card card={Enum.at(assigns.dealer_hand, 1)} />
+                <.card card={Enum.at(assigns.dealer_hand, 2)} />
+                <.card card={Enum.at(assigns.dealer_hand, 3)} />
+                <.card card={Enum.at(assigns.dealer_hand, 4)} />
+              </div>
+              <div class="flex flex-row space-x-2 justify-evenly">
+                <div class="flex flex-col">
+                  Main Pot: $<%= @main_pot %>
+                </div>
+                <div class="flex flex-col">
+                  Side Pot: $<%= @side_pots %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        """
+
+      4 ->
+        ~H"""
+        <div class="flex flex-row justify-start sm:justify-center overflow-x-auto space-x-2">
+          <div class="flex border shadow-lg rounded p-2 bg-white">
+            <div class="flex-col space-y-2">
+              <div class="flex-row text-center">Dealer</div>
+              <div class="flex flex-row space-x-2 justify-center">
+                <.card card={Enum.at(assigns.dealer_hand, 0)} />
+                <.card card={Enum.at(assigns.dealer_hand, 1)} />
+                <.card card={Enum.at(assigns.dealer_hand, 2)} />
+                <.card card={Enum.at(assigns.dealer_hand, 3)} />
+                <.card_back />
+              </div>
+              <div class="flex flex-row space-x-2 justify-evenly">
+                <div class="flex flex-col">
+                  Main Pot: $<%= @main_pot %>
+                </div>
+                <div class="flex flex-col">
+                  Side Pot: $<%= @side_pots %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        """
+
+      3 ->
+        ~H"""
+        <div class="flex flex-row justify-start sm:justify-center overflow-x-auto space-x-2">
+          <div class="flex border shadow-lg rounded p-2 bg-white">
+            <div class="flex-col space-y-2">
+              <div class="flex-row text-center">Dealer</div>
+              <div class="flex flex-row space-x-2 justify-center">
+                <.card card={Enum.at(assigns.dealer_hand, 0)} />
+                <.card card={Enum.at(assigns.dealer_hand, 1)} />
+                <.card card={Enum.at(assigns.dealer_hand, 2)} />
+                <.card_back />
+                <.card_back />
+              </div>
+              <div class="flex flex-row space-x-2 justify-evenly">
+                <div class="flex flex-col">
+                  Main Pot: $<%= @main_pot %>
+                </div>
+                <div class="flex flex-col">
+                  Side Pot: $<%= @side_pots %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        """
+
+      0 ->
     ~H"""
     <div class="flex flex-row justify-start sm:justify-center overflow-x-auto space-x-2">
       <div class="flex border shadow-lg rounded p-2 bg-white">
@@ -273,6 +356,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       </div>
     </div>
     """
+  end
   end
 
   def player(assigns) do
