@@ -254,7 +254,12 @@ defmodule Poker.GameState do
             GameState.draw_turn(game_state)
             |> GameState.set_player_queue(players)
             |> GameState.set_river_dealt(true)
-            |> GameState.determine_winner()
+
+          %GameState{flop_dealt?: true, turn_dealt?: true, river_dealt?: true} ->
+            GameState.draw_turn(game_state)
+            |> GameState.set_player_queue(players)
+            |> GameState.set_river_dealt(true)
+            # |> GameState.determine_winner()
         end
       else
         game_state
