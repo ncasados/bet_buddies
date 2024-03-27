@@ -62,12 +62,29 @@ defmodule Poker do
   @spec new_shuffled_deck() :: [%Card{}]
   def new_shuffled_deck() do
     suits = ["spade", "heart", "club", "diamond"]
-    values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
 
-    for suit <- suits, value <- values do
+    values = [
+      {"2", 2, 2},
+      {"3", 3, 3},
+      {"4", 4, 4},
+      {"5", 5, 5},
+      {"6", 6, 6},
+      {"7", 7, 7},
+      {"8", 8, 8},
+      {"9", 9, 9},
+      {"10", 10, 10},
+      {"J", 11, 11},
+      {"Q", 12, 12},
+      {"K", 13, 13},
+      {"A", 1, 14}
+    ]
+
+    for suit <- suits, {literal_value, low_value, high_value} <- values do
       %Poker.Card{
         suit: suit,
-        value: value
+        literal_value: literal_value,
+        low_numerical_value: low_value,
+        high_numerical_value: high_value
       }
     end
     |> Enum.shuffle()

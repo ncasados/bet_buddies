@@ -4,6 +4,8 @@ defmodule Poker.Card do
   @primary_key false
   embedded_schema do
     field :suit, :string
-    field :value, :string
+    field :literal_value, :string
+    field :high_numerical_value, :integer
+    field :low_numerical_value, :integer
   end
 end

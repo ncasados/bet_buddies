@@ -234,10 +234,10 @@ defmodule BetBuddiesWeb.GameLive.Index do
     ~H"""
     <div class="flex flex-col h-16 w-11 sm:w-16 sm:h-24 border shadow-lg justify-between p-1 bg-white">
       <div class="flex flex-row">
-        <div class={@color}><%= @suit %><%= @card.value %></div>
+        <div class={@color}><%= @suit %><%= @card.literal_value %></div>
       </div>
       <div class="flex flex-row-reverse">
-        <div class={@color}><%= @suit %><%= @card.value %></div>
+        <div class={@color}><%= @suit %><%= @card.literal_value %></div>
       </div>
     </div>
     """
