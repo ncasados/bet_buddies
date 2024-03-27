@@ -32,8 +32,8 @@ Some features are still missing.
 - [x] Players can bet
 - [x] Players can check
 - [x] Players can call
-- [ ] Players can fold
-- [ ] Dealer is plays flop, turn, and river
+- [x] Players can fold
+- [x] Dealer is plays flop, turn, and river
 - [ ] Pot and Side Pot are managed
 - [ ] A round of poker can be played
 - [ ] Basic functionality has automatic tests
