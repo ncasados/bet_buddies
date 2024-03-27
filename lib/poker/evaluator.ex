@@ -12,14 +12,31 @@ defmodule Poker.Evaluator do
   end
 
   def a_real_royal_flush() do
-    [
-      %Card{suit: "spade", value: "A"},
-      %Card{suit: "spade", value: "K"},
-      %Card{suit: "spade", value: "Q"},
-      %Card{suit: "spade", value: "J"},
-      %Card{suit: "spade", value: "10"},
-      %Card{suit: "diamond", value: "A"},
-      %Card{suit: "club", value: "A"},
-    ]
+    Poker.new_shuffled_deck()
+    |> Enum.reduce([], fn
+      %Card{suit: "spade", literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "spade", literal_value: "K"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "spade", literal_value: "Q"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "spade", literal_value: "J"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "spade", literal_value: "10"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      _card, acc ->
+        acc
+    end)
   end
 end
