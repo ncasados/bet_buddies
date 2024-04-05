@@ -10,10 +10,10 @@ defmodule Poker.EvaluatorTest do
   end
 
   test "Not a royal flush is not a royal flush" do
-    assert :no_royal_flush_exists = Evaluator.royal_flush?(not_a_royal_flush())
+    assert :no_royal_flush_exists = Evaluator.royal_flush?(a_nothing_hand())
   end
 
-  defp not_a_royal_flush() do
+  defp a_nothing_hand() do
     Poker.new_shuffled_deck()
     |> Enum.reduce([], fn
       %Card{suit: "spade", literal_value: "2"} = card, acc ->
@@ -42,7 +42,199 @@ defmodule Poker.EvaluatorTest do
     end)
   end
 
-  defp a_real_royal_flush() do
+  defp a_three_of_a_kind() do
+    suits = ["spade", "diamond", "club", "heart"]
+    flush_suit = Enum.random(suits)
+
+    Poker.new_shuffled_deck()
+    |> Enum.reduce([], fn
+      %Card{suit: "spade", literal_value: "10"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "9"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "8"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "heart", literal_value: "7"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "spade", literal_value: "6"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "2"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "3"} = card, acc ->
+        [card] ++ acc
+
+      _card, acc ->
+        acc
+    end)
+  end
+
+  defp a_straight() do
+    suits = ["spade", "diamond", "club", "heart"]
+    flush_suit = Enum.random(suits)
+
+    Poker.new_shuffled_deck()
+    |> Enum.reduce([], fn
+      %Card{suit: "spade", literal_value: "10"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "9"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "8"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "heart", literal_value: "7"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "spade", literal_value: "6"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "2"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "3"} = card, acc ->
+        [card] ++ acc
+
+      _card, acc ->
+        acc
+    end)
+  end
+
+  defp a_flush() do
+    suits = ["spade", "diamond", "club", "heart"]
+    flush_suit = Enum.random(suits)
+
+    Poker.new_shuffled_deck()
+    |> Enum.reduce([], fn
+      %Card{suit: ^flush_suit, literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: ^flush_suit, literal_value: "J"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: ^flush_suit, literal_value: "10"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: ^flush_suit, literal_value: "7"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: ^flush_suit, literal_value: "8"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "2"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "3"} = card, acc ->
+        [card] ++ acc
+
+      _card, acc ->
+        acc
+    end)
+  end
+
+  defp a_full_house() do
+    suits = ["spade", "diamond", "club", "heart"]
+    flush_suit = Enum.random(suits)
+
+    Poker.new_shuffled_deck()
+    |> Enum.reduce([], fn
+      %Card{suit: "spade", literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "heart", literal_value: "7"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "spade", literal_value: "7"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "2"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "3"} = card, acc ->
+        [card] ++ acc
+
+      _card, acc ->
+        acc
+    end)
+  end
+
+  defp a_four_of_a_kind() do
+    suits = ["spade", "diamond", "club", "heart"]
+    flush_suit = Enum.random(suits)
+
+    Poker.new_shuffled_deck()
+    |> Enum.reduce([], fn
+      %Card{suit: "spade", literal_value: "Q"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "Q"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "Q"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "heart", literal_value: "Q"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "spade", literal_value: "6"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      _card, acc ->
+        acc
+    end)
+  end
+
+  defp a_straight_flush() do
+    suits = ["spade", "diamond", "club", "heart"]
+    flush_suit = Enum.random(suits)
+
+    Poker.new_shuffled_deck()
+    |> Enum.reduce([], fn
+      %Card{suit: ^flush_suit, literal_value: "10"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: ^flush_suit, literal_value: "9"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: ^flush_suit, literal_value: "8"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: ^flush_suit, literal_value: "7"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: ^flush_suit, literal_value: "6"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "A"} = card, acc ->
+        [card] ++ acc
+
+      _card, acc ->
+        acc
+    end)
+  end
+
+  defp a_royal_flush() do
     suits = ["spade", "diamond", "club", "heart"]
     flush_suit = Enum.random(suits)
 
