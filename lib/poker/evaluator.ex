@@ -1,6 +1,21 @@
 defmodule Poker.Evaluator do
   alias Poker.Card
 
+  def report(list_of_cards) do
+    %{
+      royal_flush: royal_flush?(list_of_cards),
+      straight_flush: straight_flush?(list_of_cards),
+      four_of_a_kind: four_of_a_kind?(list_of_cards),
+      full_house: full_house?(list_of_cards),
+      flush: flush?(list_of_cards),
+      straight: straight?(list_of_cards),
+      three_of_a_kind: three_of_a_kind?(list_of_cards),
+      two_pair: two_pair?(list_of_cards),
+      one_pair: one_pair?(list_of_cards),
+      high_card: high_card?(list_of_cards)
+    }
+  end
+
   @spec royal_flush?(list(Card)) :: :royal_flush_exists | :no_royal_flush_exists
   def royal_flush?(list_of_cards) do
     card_suit_group =

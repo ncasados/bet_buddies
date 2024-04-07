@@ -166,7 +166,7 @@ defmodule Poker.GameState do
   @spec determine_winner(%GameState{}) :: %Player{}
   def determine_winner(%GameState{} = game_state) do
     # To do build out the card evaluation stuff
-    winning_player = %Player{}
+    game_state
   end
 
   @spec set_main_pot(%GameState{}, integer()) :: %GameState{}
@@ -259,7 +259,7 @@ defmodule Poker.GameState do
             GameState.draw_turn(game_state)
             |> GameState.set_player_queue(players)
             |> GameState.set_river_dealt(true)
-            # |> GameState.determine_winner()
+            |> GameState.determine_winner()
         end
       else
         game_state
