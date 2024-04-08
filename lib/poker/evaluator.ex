@@ -2,29 +2,51 @@ defmodule Poker.Evaluator do
   alias Poker.Card
 
   def report(list_of_cards) do
-    %{
-      royal_flush: royal_flush?(list_of_cards),
-      straight_flush: straight_flush?(list_of_cards),
-      four_of_a_kind: four_of_a_kind?(list_of_cards),
-      full_house: full_house?(list_of_cards),
-      flush: flush?(list_of_cards),
-      straight: straight?(list_of_cards),
-      three_of_a_kind: three_of_a_kind?(list_of_cards),
-      two_pair: two_pair?(list_of_cards),
-      one_pair: one_pair?(list_of_cards),
-      high_card: high_card?(list_of_cards)
-    }
+    high_card = high_card?(list_of_cards)
+
+    best =
+      [
+        royal_flush: royal_flush?(list_of_cards),
+        straight_flush: straight_flush?(list_of_cards),
+        four_of_a_kind: four_of_a_kind?(list_of_cards),
+        full_house: full_house?(list_of_cards),
+        flush: flush?(list_of_cards),
+        straight: straight?(list_of_cards),
+        three_of_a_kind: three_of_a_kind?(list_of_cards),
+        two_pair: two_pair?(list_of_cards),
+        one_pair: one_pair?(list_of_cards)
+      ]
+      |> get_best()
+
+    %{high_card: high_card, best: best}
   end
 
-  @spec royal_flush?(list(Card)) :: :royal_flush_exists | :no_royal_flush_exists
+  def get_best(report) do
+    Enum.find(report, fn
+      {:royal_flush, value} -> value
+      {:straight_flush, value} -> value
+      {:four_of_a_kind, value} -> value
+      {:full_house, value} -> value
+      {:flush, value} -> value
+      {:straight, value} -> value
+      {:three_of_a_kind, value} -> value
+      {:two_pair, value} -> value
+      {:one_pair, value} -> value
+    end)
+  end
+
+  @spec royal_flush?(list(Card)) :: true | false
   def royal_flush?(list_of_cards) do
+    royal_flush_exists = true
+    no_royal_flush_exists = false
+
     card_suit_group =
       Enum.group_by(list_of_cards, fn %Card{} = card -> card.suit end)
       |> Enum.filter(fn {_suit, cards} -> Enum.count(cards) >= 5 end)
 
     case card_suit_group do
       [] ->
-        :no_royal_flush_exists
+        no_royal_flush_exists
 
       [{_suit, cards}] ->
         card_count =
@@ -51,21 +73,24 @@ defmodule Poker.Evaluator do
           |> Enum.count()
 
         if card_count == 5 do
-          :royal_flush_exists
+          royal_flush_exists
         else
-          :no_royal_flush_exists
+          no_royal_flush_exists
         end
     end
   end
 
   def straight_flush?(list_of_cards) do
+    straight_flush_exists = true
+    no_straight_flush_exists = false
+
     card_suit_group =
       Enum.group_by(list_of_cards, fn %Card{} = card -> card.suit end)
       |> Enum.filter(fn {_suit, cards} -> Enum.count(cards) >= 5 end)
 
     case card_suit_group do
       [] ->
-        :no_straight_flush_exists
+        no_straight_flush_exists
 
       [{_suit, cards}] ->
         with {true, _cards} <-
@@ -74,28 +99,34 @@ defmodule Poker.Evaluator do
                |> Enum.map(&five_in_sequence?(&1))
                |> Enum.reject(fn {key, _cards} -> key == false end)
                |> List.last() do
-          :straight_flush_exists
+          straight_flush_exists
         else
-          nil -> :no_straight_flush_exists
+          nil -> no_straight_flush_exists
         end
     end
   end
 
   def four_of_a_kind?(list_of_cards) do
+    four_of_a_kind_exists = true
+    no_four_of_a_kind = false
+
     card_values_group =
       Enum.group_by(list_of_cards, fn %Card{} = card -> card.literal_value end)
       |> Enum.filter(fn {_literal_values, cards} -> Enum.count(cards) == 4 end)
 
     case card_values_group do
       [] ->
-        :no_four_of_a_kind
+        no_four_of_a_kind
 
       [{_suit, _cards}] ->
-        :four_of_a_kind_exists
+        four_of_a_kind_exists
     end
   end
 
   def full_house?(list_of_cards) do
+    full_house_exists = true
+    no_full_house = false
+
     card_values_group =
       Enum.group_by(list_of_cards, fn %Card{} = card -> card.literal_value end)
       |> Enum.filter(fn
@@ -106,75 +137,90 @@ defmodule Poker.Evaluator do
       |> Enum.map(fn {_key, cards} -> Enum.count(cards) end)
 
     if Enum.member?(card_values_group, 2) and Enum.member?(card_values_group, 3) do
-      :a_full_house_exists
+      full_house_exists
     else
-      :no_full_house
+      no_full_house
     end
   end
 
   def flush?(list_of_cards) do
+    flush_exists = true
+    no_flush_exists = false
+
     card_suit_group =
       Enum.group_by(list_of_cards, fn %Card{} = card -> card.suit end)
       |> Enum.filter(fn {_suit, cards} -> Enum.count(cards) >= 5 end)
 
     case card_suit_group do
-      [] -> :no_flush
-      _ -> :a_flush_exists
+      [] -> no_flush_exists
+      _ -> flush_exists
     end
   end
 
   def straight?(list_of_cards) do
+    straight_exists = true
+    no_straight_exists = false
+
     with {true, _cards} <-
            Enum.sort_by(list_of_cards, fn %Card{} = card -> card.low_numerical_value end)
            |> Enum.chunk_every(5, 1, :discard)
            |> Enum.map(&five_in_sequence?(&1))
            |> Enum.reject(fn {key, _cards} -> key == false end)
            |> List.last() do
-      :straight_exists
+      straight_exists
     else
-      nil -> :no_straight_exists
+      nil -> no_straight_exists
     end
   end
 
   def three_of_a_kind?(list_of_cards) do
+    three_of_a_kind_exists = true
+    no_three_of_a_kind_exists = false
+
     card_values_group =
       Enum.group_by(list_of_cards, fn %Card{} = card -> card.literal_value end)
       |> Enum.filter(fn {_literal_values, cards} -> Enum.count(cards) == 3 end)
 
     case card_values_group do
       [] ->
-        :no_three_of_a_kind
+        no_three_of_a_kind_exists
 
       [{_suit, _cards}] ->
-        :three_of_a_kind_exists
+        three_of_a_kind_exists
     end
   end
 
   def two_pair?(list_of_cards) do
+    two_pair_exists = true
+    no_two_pair_exists = false
+
     card_values_group =
       Enum.group_by(list_of_cards, fn %Card{} = card -> card.literal_value end)
       |> Enum.filter(fn {_literal_values, cards} -> Enum.count(cards) == 2 end)
 
     case length(card_values_group) do
       2 ->
-        :two_pair_exists
+        two_pair_exists
 
       _ ->
-        :no_two_pair
+        no_two_pair_exists
     end
   end
 
   def one_pair?(list_of_cards) do
+    pair_exists = true
+    no_pair_exists = false
+
     card_values_group =
       Enum.group_by(list_of_cards, fn %Card{} = card -> card.literal_value end)
       |> Enum.filter(fn {_literal_values, cards} -> Enum.count(cards) == 2 end)
 
     case length(card_values_group) do
       1 ->
-        :pair_exists
+        pair_exists
 
       _ ->
-        :no_pair
+        no_pair_exists
     end
   end
 
