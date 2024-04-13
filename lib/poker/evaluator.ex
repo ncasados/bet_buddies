@@ -1,41 +1,68 @@
 defmodule Poker.Evaluator do
   alias Poker.Card
+  alias Poker.Evaluator.Hands
+  alias Poker.Evaluator.Results
+  alias Poker.Evaluator.Report
 
-  def report(list_of_cards) do
-    high_card = high_card?(list_of_cards)
+  def report(player_id, hand, dealer_hand) do
+    high_card = high_card?(hand)
+    list_of_cards = hand ++ dealer_hand
 
     best =
       [
-        royal_flush: royal_flush?(list_of_cards),
-        straight_flush: straight_flush?(list_of_cards),
-        four_of_a_kind: four_of_a_kind?(list_of_cards),
-        full_house: full_house?(list_of_cards),
-        flush: flush?(list_of_cards),
-        straight: straight?(list_of_cards),
-        three_of_a_kind: three_of_a_kind?(list_of_cards),
-        two_pair: two_pair?(list_of_cards),
-        one_pair: one_pair?(list_of_cards)
+        royal_flush?(list_of_cards),
+        straight_flush?(list_of_cards),
+        four_of_a_kind?(list_of_cards),
+        full_house?(list_of_cards),
+        flush?(list_of_cards),
+        straight?(list_of_cards),
+        three_of_a_kind?(list_of_cards),
+        two_pair?(list_of_cards),
+        one_pair?(list_of_cards)
       ]
-      |> get_best()
 
-    %{high_card: high_card, best: best}
+    # |> get_best()
+
+    %Report{high_card: high_card, best: best, player_id: player_id}
+  end
+
+  def report() do
+    [h1, h2 | dealer_hand] = Hands.a_nothing_hand()
+    hand = [h1, h2]
+    high_card = high_card?(hand)
+    list_of_cards = hand ++ dealer_hand
+
+    best =
+      [
+        royal_flush?(list_of_cards),
+        straight_flush?(list_of_cards),
+        four_of_a_kind?(list_of_cards),
+        full_house?(list_of_cards),
+        flush?(list_of_cards),
+        straight?(list_of_cards),
+        three_of_a_kind?(list_of_cards),
+        two_pair?(list_of_cards),
+        one_pair?(list_of_cards)
+      ]
+
+    %Report{high_card: high_card, best: best, player_id: "player_id"}
   end
 
   def get_best(report) do
     Enum.find(report, fn
-      {:royal_flush, value} -> value
-      {:straight_flush, value} -> value
-      {:four_of_a_kind, value} -> value
-      {:full_house, value} -> value
-      {:flush, value} -> value
-      {:straight, value} -> value
-      {:three_of_a_kind, value} -> value
-      {:two_pair, value} -> value
-      {:one_pair, value} -> value
+      {:royal_flush, value, _cards} -> value
+      {:straight_flush, value, _cards} -> value
+      {:four_of_a_kind, value, _cards} -> value
+      {:full_house, value, _cards} -> value
+      {:flush, value, _cards} -> value
+      {:straight, value, _cards} -> value
+      {:three_of_a_kind, value, _cards} -> value
+      {:two_pair, value, _cards} -> value
+      {:one_pair, value, _cards} -> value
     end)
   end
 
-  @spec royal_flush?(list(Card)) :: true | false
+  @spec royal_flush?(list(Card)) :: %Results{}
   def royal_flush?(list_of_cards) do
     royal_flush_exists = true
     no_royal_flush_exists = false
@@ -46,7 +73,7 @@ defmodule Poker.Evaluator do
 
     case card_suit_group do
       [] ->
-        no_royal_flush_exists
+        %Results{type: :royal_flush, exists?: no_royal_flush_exists, cards: []}
 
       [{_suit, cards}] ->
         card_count =
@@ -73,9 +100,9 @@ defmodule Poker.Evaluator do
           |> Enum.count()
 
         if card_count == 5 do
-          royal_flush_exists
+          %Results{type: :royal_flush, exists?: royal_flush_exists, cards: cards}
         else
-          no_royal_flush_exists
+          %Results{type: :royal_flush, exists?: no_royal_flush_exists, cards: []}
         end
     end
   end
@@ -90,18 +117,19 @@ defmodule Poker.Evaluator do
 
     case card_suit_group do
       [] ->
-        no_straight_flush_exists
+        %Results{type: :straight_flush, exists?: no_straight_flush_exists, cards: []}
 
       [{_suit, cards}] ->
-        with {true, _cards} <-
+        with {true, cards} <-
                Enum.sort_by(cards, fn %Card{} = card -> card.low_numerical_value end)
                |> Enum.chunk_every(5, 1, :discard)
                |> Enum.map(&five_in_sequence?(&1))
                |> Enum.reject(fn {key, _cards} -> key == false end)
                |> List.last() do
-          straight_flush_exists
+          %Results{type: :straight_flush, exists?: straight_flush_exists, cards: cards}
         else
-          nil -> no_straight_flush_exists
+          nil ->
+            %Results{type: :straight_flush, exists?: no_straight_flush_exists, cards: []}
         end
     end
   end
@@ -116,10 +144,10 @@ defmodule Poker.Evaluator do
 
     case card_values_group do
       [] ->
-        no_four_of_a_kind
+        %Results{type: :four_of_a_kind, exists?: no_four_of_a_kind, cards: []}
 
-      [{_suit, _cards}] ->
-        four_of_a_kind_exists
+      [{_suit, cards}] ->
+        %Results{type: :four_of_a_kind, exists?: four_of_a_kind_exists, cards: cards}
     end
   end
 
@@ -127,19 +155,24 @@ defmodule Poker.Evaluator do
     full_house_exists = true
     no_full_house = false
 
-    card_values_group =
-      Enum.group_by(list_of_cards, fn %Card{} = card -> card.literal_value end)
-      |> Enum.filter(fn
-        {_literal_values, cards} when length(cards) == 3 -> true
-        {_literal_values, cards} when length(cards) == 2 -> true
-        {_literal_values, _cards} -> false
-      end)
-      |> Enum.map(fn {_key, cards} -> Enum.count(cards) end)
+    with [group1, group2] <-
+           Enum.group_by(list_of_cards, fn %Card{} = card -> card.high_numerical_value end)
+           |> Enum.filter(fn
+             {_literal_values, cards} when length(cards) == 3 -> true
+             {_literal_values, cards} when length(cards) == 2 -> true
+             {_literal_values, _cards} -> false
+           end)
+           |> Map.new()
+           |> Map.values() do
+      case {length(group1), length(group2)} do
+        {2, 3} ->
+          %Results{type: :full_house, exists?: full_house_exists, cards: group1 ++ group2}
 
-    if Enum.member?(card_values_group, 2) and Enum.member?(card_values_group, 3) do
-      full_house_exists
+        _ ->
+          %Results{type: :full_house, exists?: no_full_house, cards: []}
+      end
     else
-      no_full_house
+      _ -> %Results{type: :full_house, exists?: no_full_house, cards: []}
     end
   end
 
@@ -147,13 +180,13 @@ defmodule Poker.Evaluator do
     flush_exists = true
     no_flush_exists = false
 
-    card_suit_group =
-      Enum.group_by(list_of_cards, fn %Card{} = card -> card.suit end)
-      |> Enum.filter(fn {_suit, cards} -> Enum.count(cards) >= 5 end)
-
-    case card_suit_group do
-      [] -> no_flush_exists
-      _ -> flush_exists
+    with [{_suit, cards}] <-
+           Enum.sort_by(list_of_cards, fn %Card{high_numerical_value: value} -> value end)
+           |> Enum.group_by(fn %Card{} = card -> card.suit end)
+           |> Enum.filter(fn {_suit, cards} -> Enum.count(cards) >= 5 end) do
+      %Results{type: :flush, exists?: flush_exists, cards: cards}
+    else
+      _ -> %Results{type: :flush, exists?: no_flush_exists, cards: []}
     end
   end
 
@@ -161,15 +194,20 @@ defmodule Poker.Evaluator do
     straight_exists = true
     no_straight_exists = false
 
-    with {true, _cards} <-
+    with {true, cards} <-
            Enum.sort_by(list_of_cards, fn %Card{} = card -> card.low_numerical_value end)
            |> Enum.chunk_every(5, 1, :discard)
            |> Enum.map(&five_in_sequence?(&1))
            |> Enum.reject(fn {key, _cards} -> key == false end)
            |> List.last() do
-      straight_exists
+      %Results{type: :straight, exists?: straight_exists, cards: cards}
     else
-      nil -> no_straight_exists
+      nil ->
+        %Results{
+          type: :three_of_a_kind,
+          exists?: no_straight_exists,
+          cards: []
+        }
     end
   end
 
