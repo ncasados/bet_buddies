@@ -42,6 +42,64 @@ defmodule Poker.EvaluatorTest do
     end)
   end
 
+  def a_one_pair() do
+    Poker.new_shuffled_deck()
+    |> Enum.reduce([], fn
+      %Card{suit: "spade", literal_value: "2"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "2"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "4"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "heart", literal_value: "6"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "spade", literal_value: "8"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "10"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "Q"} = card, acc ->
+        [card] ++ acc
+
+      _card, acc ->
+        acc
+    end)
+  end
+
+  def a_two_pair() do
+    Poker.new_shuffled_deck()
+    |> Enum.reduce([], fn
+      %Card{suit: "spade", literal_value: "2"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "2"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "3"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "heart", literal_value: "3"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "spade", literal_value: "4"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "club", literal_value: "4"} = card, acc ->
+        [card] ++ acc
+
+      %Card{suit: "diamond", literal_value: "8"} = card, acc ->
+        [card] ++ acc
+
+      _card, acc ->
+        acc
+    end)
+  end
+
   defp a_three_of_a_kind() do
     suits = ["spade", "diamond", "club", "heart"]
     flush_suit = Enum.random(suits)
