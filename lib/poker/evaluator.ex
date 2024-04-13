@@ -178,15 +178,23 @@ defmodule Poker.Evaluator do
     no_three_of_a_kind_exists = false
 
     card_values_group =
-      Enum.group_by(list_of_cards, fn %Card{} = card -> card.literal_value end)
+      Enum.group_by(list_of_cards, fn %Card{} = card -> card.high_numerical_value end)
       |> Enum.filter(fn {_literal_values, cards} -> Enum.count(cards) == 3 end)
+      |> Map.new()
+      |> Map.values()
+      |> Enum.sort_by(fn [%Card{high_numerical_value: value} | _cards] -> value end)
+      |> List.last()
 
     case card_values_group do
-      [] ->
-        no_three_of_a_kind_exists
+      nil ->
+        %Results{type: :three_of_a_kind, exists?: no_three_of_a_kind_exists, cards: []}
 
-      [{_suit, _cards}] ->
-        three_of_a_kind_exists
+      _ ->
+        %Results{
+          type: :three_of_a_kind,
+          exists?: three_of_a_kind_exists,
+          cards: card_values_group
+        }
     end
   end
 
@@ -195,18 +203,17 @@ defmodule Poker.Evaluator do
     no_two_pair_exists = false
 
     card_values_group =
-      Enum.group_by(list_of_cards, fn %Card{} = card -> card.literal_value end)
+      Enum.group_by(list_of_cards, fn %Card{} = card -> card.high_numerical_value end)
       |> Enum.filter(fn {_literal_values, cards} -> Enum.count(cards) == 2 end)
       |> Map.new()
       |> Map.values()
       |> Enum.sort_by(fn [%Card{high_numerical_value: value} | _cards] -> value end, :desc)
-      |> IO.inspect()
 
     with [pair1, pair2 | _the_rest] <- card_values_group do
       highest_pair = [pair1, pair2]
-      %{type: :two_pair, exists?: two_pair_exists, cards: highest_pair}
+      %Results{type: :two_pair, exists?: two_pair_exists, cards: highest_pair}
     else
-      _ -> %{type: :two_pair, exists?: no_two_pair_exists, cards: []}
+      _ -> %Results{type: :two_pair, exists?: no_two_pair_exists, cards: []}
     end
   end
 
@@ -224,10 +231,10 @@ defmodule Poker.Evaluator do
 
     case card_values_group do
       nil ->
-        %{type: :one_pair, exists?: no_pair_exists, cards: []}
+        %Results{type: :one_pair, exists?: no_pair_exists, cards: []}
 
       _ ->
-        %{type: :one_pair, exists?: pair_exists, cards: card_values_group}
+        %Results{type: :one_pair, exists?: pair_exists, cards: card_values_group}
     end
   end
 
