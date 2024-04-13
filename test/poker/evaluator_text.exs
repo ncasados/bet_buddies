@@ -6,11 +6,19 @@ defmodule Poker.EvaluatorTest do
   alias Poker.Evaluator
 
   test "A royal flush is a royal flush" do
-    assert :royal_flush_exists = Evaluator.royal_flush?(a_real_royal_flush())
+    assert true == Evaluator.royal_flush?(a_royal_flush())
   end
 
   test "Not a royal flush is not a royal flush" do
-    assert :no_royal_flush_exists = Evaluator.royal_flush?(a_nothing_hand())
+    assert false == Evaluator.royal_flush?(a_nothing_hand())
+  end
+
+  test "report card of cards" do
+    [h1, h2 | dealer_hand] = a_nothing_hand()
+    player_hand = [h1, h2]
+
+    Evaluator.report("player", player_hand, dealer_hand)
+    |> IO.inspect()
   end
 
   defp a_nothing_hand() do
