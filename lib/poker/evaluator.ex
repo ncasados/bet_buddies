@@ -197,13 +197,16 @@ defmodule Poker.Evaluator do
     card_values_group =
       Enum.group_by(list_of_cards, fn %Card{} = card -> card.literal_value end)
       |> Enum.filter(fn {_literal_values, cards} -> Enum.count(cards) == 2 end)
+      |> Map.new()
+      |> Map.values()
+      |> Enum.sort_by(fn [%Card{high_numerical_value: value} | _cards] -> value end, :desc)
+      |> IO.inspect()
 
-    case length(card_values_group) do
-      2 ->
-        two_pair_exists
-
-      _ ->
-        no_two_pair_exists
+    with [pair1, pair2 | _the_rest] <- card_values_group do
+      highest_pair = [pair1, pair2]
+      %{type: :two_pair, exists?: two_pair_exists, cards: highest_pair}
+    else
+      _ -> %{type: :two_pair, exists?: no_two_pair_exists, cards: []}
     end
   end
 
@@ -212,15 +215,19 @@ defmodule Poker.Evaluator do
     no_pair_exists = false
 
     card_values_group =
-      Enum.group_by(list_of_cards, fn %Card{} = card -> card.literal_value end)
+      Enum.group_by(list_of_cards, fn %Card{} = card -> card.high_numerical_value end)
       |> Enum.filter(fn {_literal_values, cards} -> Enum.count(cards) == 2 end)
+      |> Map.new()
+      |> Map.values()
+      |> Enum.sort_by(fn [%Card{high_numerical_value: value} | _cards] -> value end)
+      |> List.last()
 
-    case length(card_values_group) do
-      1 ->
-        pair_exists
+    case card_values_group do
+      nil ->
+        %{type: :one_pair, exists?: no_pair_exists, cards: []}
 
       _ ->
-        no_pair_exists
+        %{type: :one_pair, exists?: pair_exists, cards: card_values_group}
     end
   end
 
