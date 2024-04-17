@@ -4,6 +4,9 @@ defmodule Poker.GameState do
   # See https://github.com/zblanco/many_ways_to_workflow/blob/master/op_otp/lib/op_otp/
 
   use Ecto.Schema
+  alias Poker.Evaluator.Results
+  alias Poker.Evaluator.Report
+  alias Poker.Evaluator
   alias Poker.Card
   alias Poker.Player
   alias Poker.GameState
@@ -31,6 +34,7 @@ defmodule Poker.GameState do
     field :flop_dealt?, :boolean, default: false
     field :turn_dealt?, :boolean, default: false
     field :river_dealt?, :boolean, default: false
+    embeds_one :round_winner, Poker.Player
   end
 
   # Queries
@@ -163,10 +167,55 @@ defmodule Poker.GameState do
   # Transformations
 
   # Spec that I want
-  @spec determine_winner(%GameState{}) :: %Player{}
+  @spec determine_winner(%GameState{}) :: %GameState{}
   def determine_winner(%GameState{} = game_state) do
     # To do build out the card evaluation stuff
-    game_state
+
+    %Report{player_id: best_player_id} =
+      Enum.map(game_state.players, fn %Player{player_id: player_id, hand: hand} ->
+        Evaluator.report(player_id, hand, game_state.dealer_hand)
+      end)
+      |> Enum.group_by(fn %Report{best: %Results{index: index}} -> index end)
+      |> Map.to_list()
+      |> Enum.sort_by(fn {index, _reports} -> index end)
+      |> List.last()
+      |> get_best()
+
+    winning_player =
+      Enum.find(game_state.players, fn %Player{player_id: player_id} ->
+        player_id == best_player_id
+      end)
+
+    Map.update!(game_state, :round_winner, fn _ -> winning_player.player_id end)
+  end
+
+  def get_best({_index, reports}) do
+    if length(reports) > 1 do
+      best_player =
+        reports
+        |> Enum.map(fn %Report{
+                         best: %Results{cards: cards},
+                         high_card: %Card{high_numerical_value: high_card_value},
+                         player_id: player_id
+                       } ->
+          cards = List.flatten(cards)
+
+          sum_of_best =
+            Enum.reduce(cards, 0, fn %Card{high_numerical_value: value}, acc ->
+              value + acc
+            end)
+
+          %{score: sum_of_best + high_card_value, player_id: player_id}
+        end)
+        |> Enum.sort_by(fn %{score: score} -> score end)
+        |> List.last()
+
+      Enum.find(reports, fn %Report{player_id: player_id} ->
+        player_id == best_player.player_id
+      end)
+    else
+      List.first(reports)
+    end
   end
 
   @spec set_main_pot(%GameState{}, integer()) :: %GameState{}
@@ -256,7 +305,12 @@ defmodule Poker.GameState do
             |> GameState.set_river_dealt(true)
 
           %GameState{flop_dealt?: true, turn_dealt?: true, river_dealt?: true} ->
-            GameState.determine_winner(game_state)
+            # TODO Need to get pot splits figured out and side pots
+            %GameState{round_winner: winner_id} =
+              game_state = GameState.determine_winner(game_state)
+
+            %{player: winning_player} = GameState.find_player(game_state, winner_id)
+            give_main_pot_to_player(game_state, winning_player)
         end
       else
         game_state

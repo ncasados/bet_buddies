@@ -5,10 +5,11 @@ defmodule Poker.Evaluator do
   alias Poker.Evaluator.Report
 
   def report(player_id, hand, dealer_hand) do
-    high_card = high_card?(hand)
+    %Card{} = high_card = high_card?(hand)
     list_of_cards = hand ++ dealer_hand
 
-    best =
+    %Results{} =
+      best =
       [
         royal_flush?(list_of_cards),
         straight_flush?(list_of_cards),
@@ -20,10 +21,13 @@ defmodule Poker.Evaluator do
         two_pair?(list_of_cards),
         one_pair?(list_of_cards)
       ]
+      |> get_best()
 
-    # |> get_best()
-
-    %Report{high_card: high_card, best: best, player_id: player_id}
+    %Report{
+      high_card: high_card,
+      best: best,
+      player_id: player_id
+    }
   end
 
   def report() do
@@ -50,15 +54,15 @@ defmodule Poker.Evaluator do
 
   def get_best(report) do
     Enum.find(report, fn
-      {:royal_flush, value, _cards} -> value
-      {:straight_flush, value, _cards} -> value
-      {:four_of_a_kind, value, _cards} -> value
-      {:full_house, value, _cards} -> value
-      {:flush, value, _cards} -> value
-      {:straight, value, _cards} -> value
-      {:three_of_a_kind, value, _cards} -> value
-      {:two_pair, value, _cards} -> value
-      {:one_pair, value, _cards} -> value
+      %Results{type: :royal_flush, exists?: value, cards: _cards} -> value
+      %Results{type: :straight_flush, exists?: value, cards: _cards} -> value
+      %Results{type: :four_of_a_kind, exists?: value, cards: _cards} -> value
+      %Results{type: :full_house, exists?: value, cards: _cards} -> value
+      %Results{type: :flush, exists?: value, cards: _cards} -> value
+      %Results{type: :straight, exists?: value, cards: _cards} -> value
+      %Results{type: :three_of_a_kind, exists?: value, cards: _cards} -> value
+      %Results{type: :two_pair, exists?: value, cards: _cards} -> value
+      %Results{type: :one_pair, exists?: value, cards: _cards} -> value
     end)
   end
 
@@ -73,7 +77,7 @@ defmodule Poker.Evaluator do
 
     case card_suit_group do
       [] ->
-        %Results{type: :royal_flush, exists?: no_royal_flush_exists, cards: []}
+        %Results{type: :royal_flush, exists?: no_royal_flush_exists, cards: [], index: 9}
 
       [{_suit, cards}] ->
         card_count =
@@ -100,9 +104,9 @@ defmodule Poker.Evaluator do
           |> Enum.count()
 
         if card_count == 5 do
-          %Results{type: :royal_flush, exists?: royal_flush_exists, cards: cards}
+          %Results{type: :royal_flush, exists?: royal_flush_exists, cards: cards, index: 9}
         else
-          %Results{type: :royal_flush, exists?: no_royal_flush_exists, cards: []}
+          %Results{type: :royal_flush, exists?: no_royal_flush_exists, cards: [], index: 9}
         end
     end
   end
@@ -117,7 +121,7 @@ defmodule Poker.Evaluator do
 
     case card_suit_group do
       [] ->
-        %Results{type: :straight_flush, exists?: no_straight_flush_exists, cards: []}
+        %Results{type: :straight_flush, exists?: no_straight_flush_exists, cards: [], index: 8}
 
       [{_suit, cards}] ->
         with {true, cards} <-
@@ -126,10 +130,10 @@ defmodule Poker.Evaluator do
                |> Enum.map(&five_in_sequence?(&1))
                |> Enum.reject(fn {key, _cards} -> key == false end)
                |> List.last() do
-          %Results{type: :straight_flush, exists?: straight_flush_exists, cards: cards}
+          %Results{type: :straight_flush, exists?: straight_flush_exists, cards: cards, index: 8}
         else
           nil ->
-            %Results{type: :straight_flush, exists?: no_straight_flush_exists, cards: []}
+            %Results{type: :straight_flush, exists?: no_straight_flush_exists, cards: [], index: 8}
         end
     end
   end
@@ -144,10 +148,10 @@ defmodule Poker.Evaluator do
 
     case card_values_group do
       [] ->
-        %Results{type: :four_of_a_kind, exists?: no_four_of_a_kind, cards: []}
+        %Results{type: :four_of_a_kind, exists?: no_four_of_a_kind, cards: [], index: 7}
 
       [{_suit, cards}] ->
-        %Results{type: :four_of_a_kind, exists?: four_of_a_kind_exists, cards: cards}
+        %Results{type: :four_of_a_kind, exists?: four_of_a_kind_exists, cards: cards, index: 7}
     end
   end
 
@@ -166,13 +170,13 @@ defmodule Poker.Evaluator do
            |> Map.values() do
       case {length(group1), length(group2)} do
         {2, 3} ->
-          %Results{type: :full_house, exists?: full_house_exists, cards: group1 ++ group2}
+          %Results{type: :full_house, exists?: full_house_exists, cards: group1 ++ group2, index: 6}
 
         _ ->
-          %Results{type: :full_house, exists?: no_full_house, cards: []}
+          %Results{type: :full_house, exists?: no_full_house, cards: [], index: 6}
       end
     else
-      _ -> %Results{type: :full_house, exists?: no_full_house, cards: []}
+      _ -> %Results{type: :full_house, exists?: no_full_house, cards: [], index: 6}
     end
   end
 
@@ -184,9 +188,9 @@ defmodule Poker.Evaluator do
            Enum.sort_by(list_of_cards, fn %Card{high_numerical_value: value} -> value end)
            |> Enum.group_by(fn %Card{} = card -> card.suit end)
            |> Enum.filter(fn {_suit, cards} -> Enum.count(cards) >= 5 end) do
-      %Results{type: :flush, exists?: flush_exists, cards: cards}
+      %Results{type: :flush, exists?: flush_exists, cards: cards, index: 5}
     else
-      _ -> %Results{type: :flush, exists?: no_flush_exists, cards: []}
+      _ -> %Results{type: :flush, exists?: no_flush_exists, cards: [], index: 5}
     end
   end
 
@@ -200,13 +204,13 @@ defmodule Poker.Evaluator do
            |> Enum.map(&five_in_sequence?(&1))
            |> Enum.reject(fn {key, _cards} -> key == false end)
            |> List.last() do
-      %Results{type: :straight, exists?: straight_exists, cards: cards}
+      %Results{type: :straight, exists?: straight_exists, cards: cards, index: 4}
     else
       nil ->
         %Results{
           type: :three_of_a_kind,
           exists?: no_straight_exists,
-          cards: []
+          cards: [], index: 4
         }
     end
   end
@@ -225,13 +229,13 @@ defmodule Poker.Evaluator do
 
     case card_values_group do
       nil ->
-        %Results{type: :three_of_a_kind, exists?: no_three_of_a_kind_exists, cards: []}
+        %Results{type: :three_of_a_kind, exists?: no_three_of_a_kind_exists, cards: [], index: 3}
 
       _ ->
         %Results{
           type: :three_of_a_kind,
           exists?: three_of_a_kind_exists,
-          cards: card_values_group
+          cards: card_values_group, index: 3
         }
     end
   end
@@ -249,9 +253,9 @@ defmodule Poker.Evaluator do
 
     with [pair1, pair2 | _the_rest] <- card_values_group do
       highest_pair = [pair1, pair2]
-      %Results{type: :two_pair, exists?: two_pair_exists, cards: highest_pair}
+      %Results{type: :two_pair, exists?: two_pair_exists, cards: highest_pair, index: 2}
     else
-      _ -> %Results{type: :two_pair, exists?: no_two_pair_exists, cards: []}
+      _ -> %Results{type: :two_pair, exists?: no_two_pair_exists, cards: [], index: 2}
     end
   end
 
@@ -269,10 +273,10 @@ defmodule Poker.Evaluator do
 
     case card_values_group do
       nil ->
-        %Results{type: :one_pair, exists?: no_pair_exists, cards: []}
+        %Results{type: :one_pair, exists?: no_pair_exists, cards: [], index: 1}
 
       _ ->
-        %Results{type: :one_pair, exists?: pair_exists, cards: card_values_group}
+        %Results{type: :one_pair, exists?: pair_exists, cards: card_values_group, index: 1}
     end
   end
 

@@ -2,6 +2,7 @@ defmodule Poker.Evaluator.Results do
   defstruct [
     :type,
     :exists?,
-    :cards
+    :cards,
+    :index
   ]
 end

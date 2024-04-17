@@ -23,7 +23,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
       most_recent_max_bet: most_recent_max_bet,
       minimum_call: minimum_call,
       player_queue: player_queue,
-      dealer_hand: dealer_hand
+      dealer_hand: dealer_hand,
+      round_winner: winner
     } = game_state = Poker.get_game_state(game_id)
 
     %Player{contributed: players_bet} = player = find_player(players, player_id)
@@ -45,6 +46,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:game_state, game_state)
       |> assign(:player_queue, player_queue)
       |> assign(:dealer_hand, dealer_hand)
+      |> assign(:winner, winner)
 
     {:ok, socket}
   end
@@ -107,7 +109,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
       most_recent_max_bet: most_recent_max_bet,
       minimum_call: minimum_call,
       player_queue: player_queue,
-      dealer_hand: dealer_hand
+      dealer_hand: dealer_hand,
+      round_winner: winner
     } =
       game_state =
       Poker.get_game_state(game_id)
@@ -128,6 +131,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= minimum_call)
       |> assign(:player_queue, player_queue)
       |> assign(:dealer_hand, dealer_hand)
+      |> assign(:winner, winner)
 
     {:noreply, socket}
   end
@@ -161,6 +165,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
             <.dealer main_pot={@main_pot} side_pots={@side_pots} dealer_hand={@dealer_hand} />
         <% end %>
         <.player
+          winner={@winner}
           player={@player}
           bet_slider_value={@bet_slider_value}
           game_stage={@game_stage}
@@ -512,6 +517,10 @@ defmodule BetBuddiesWeb.GameLive.Index do
           <div class="flex flex-row justify-center space-x-2">
             <div class="flex border shadow-lg rounded p-2 bg-white">
               <div class="flex-col space-y-2">
+                <%= if @winner == @player.player_id do %>
+                  <div class="flex-row text-center">Winner</div>
+                <% else %>
+                <% end %>
                 <div class="flex-row text-center"><%= @player.name %></div>
                 <div class="flex-row bg-gray-300 rounded p-1 text-center">$<%= @player.wallet %></div>
                 <div></div>
