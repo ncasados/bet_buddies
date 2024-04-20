@@ -53,7 +53,7 @@ defmodule Poker.Evaluator do
   end
 
   def get_best(report) do
-    Enum.find(report, fn
+    with %Results{} = results <- Enum.find(report, fn
       %Results{type: :royal_flush, exists?: value, cards: _cards} -> value
       %Results{type: :straight_flush, exists?: value, cards: _cards} -> value
       %Results{type: :four_of_a_kind, exists?: value, cards: _cards} -> value
@@ -63,7 +63,11 @@ defmodule Poker.Evaluator do
       %Results{type: :three_of_a_kind, exists?: value, cards: _cards} -> value
       %Results{type: :two_pair, exists?: value, cards: _cards} -> value
       %Results{type: :one_pair, exists?: value, cards: _cards} -> value
-    end)
+    end) do
+      results
+    else
+      nil -> %Results{type: :none, exists?: true, cards: []}
+    end
   end
 
   @spec royal_flush?(list(Card)) :: %Results{}
