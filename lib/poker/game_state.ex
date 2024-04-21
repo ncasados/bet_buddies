@@ -191,21 +191,30 @@ defmodule Poker.GameState do
 
   def get_best({_index, reports}) do
     if length(reports) > 1 do
+      # Two hands to compare
       best_player =
         reports
-        |> Enum.map(fn %Report{
-                         best: %Results{cards: cards},
-                         high_card: %Card{high_numerical_value: high_card_value},
-                         player_id: player_id
-                       } ->
-          cards = List.flatten(cards)
+        |> Enum.map(fn
+          %Report{
+            best: nil,
+            high_card: %Card{high_numerical_value: high_card_value},
+            player_id: player_id
+          } ->
+            %{score: high_card_value, player_id: player_id}
 
-          sum_of_best =
-            Enum.reduce(cards, 0, fn %Card{high_numerical_value: value}, acc ->
-              value + acc
-            end)
+          %Report{
+            best: %Results{cards: cards},
+            high_card: %Card{high_numerical_value: high_card_value},
+            player_id: player_id
+          } ->
+            cards = List.flatten(cards)
 
-          %{score: sum_of_best + high_card_value, player_id: player_id}
+            sum_of_best =
+              Enum.reduce(cards, 0, fn %Card{high_numerical_value: value}, acc ->
+                value + acc
+              end)
+
+            %{score: sum_of_best + high_card_value, player_id: player_id}
         end)
         |> Enum.sort_by(fn %{score: score} -> score end)
         |> List.last()
@@ -214,6 +223,7 @@ defmodule Poker.GameState do
         player_id == best_player.player_id
       end)
     else
+      # No hands to compare
       List.first(reports)
     end
   end

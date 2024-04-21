@@ -53,17 +53,18 @@ defmodule Poker.Evaluator do
   end
 
   def get_best(report) do
-    with %Results{} = results <- Enum.find(report, fn
-      %Results{type: :royal_flush, exists?: value, cards: _cards} -> value
-      %Results{type: :straight_flush, exists?: value, cards: _cards} -> value
-      %Results{type: :four_of_a_kind, exists?: value, cards: _cards} -> value
-      %Results{type: :full_house, exists?: value, cards: _cards} -> value
-      %Results{type: :flush, exists?: value, cards: _cards} -> value
-      %Results{type: :straight, exists?: value, cards: _cards} -> value
-      %Results{type: :three_of_a_kind, exists?: value, cards: _cards} -> value
-      %Results{type: :two_pair, exists?: value, cards: _cards} -> value
-      %Results{type: :one_pair, exists?: value, cards: _cards} -> value
-    end) do
+    with %Results{} = results <-
+           Enum.find(report, fn
+             %Results{type: :royal_flush, exists?: value, cards: _cards} -> value
+             %Results{type: :straight_flush, exists?: value, cards: _cards} -> value
+             %Results{type: :four_of_a_kind, exists?: value, cards: _cards} -> value
+             %Results{type: :full_house, exists?: value, cards: _cards} -> value
+             %Results{type: :flush, exists?: value, cards: _cards} -> value
+             %Results{type: :straight, exists?: value, cards: _cards} -> value
+             %Results{type: :three_of_a_kind, exists?: value, cards: _cards} -> value
+             %Results{type: :two_pair, exists?: value, cards: _cards} -> value
+             %Results{type: :one_pair, exists?: value, cards: _cards} -> value
+           end) do
       results
     else
       nil -> %Results{type: :none, exists?: true, cards: []}
@@ -137,7 +138,12 @@ defmodule Poker.Evaluator do
           %Results{type: :straight_flush, exists?: straight_flush_exists, cards: cards, index: 8}
         else
           nil ->
-            %Results{type: :straight_flush, exists?: no_straight_flush_exists, cards: [], index: 8}
+            %Results{
+              type: :straight_flush,
+              exists?: no_straight_flush_exists,
+              cards: [],
+              index: 8
+            }
         end
     end
   end
@@ -174,7 +180,12 @@ defmodule Poker.Evaluator do
            |> Map.values() do
       case {length(group1), length(group2)} do
         {2, 3} ->
-          %Results{type: :full_house, exists?: full_house_exists, cards: group1 ++ group2, index: 6}
+          %Results{
+            type: :full_house,
+            exists?: full_house_exists,
+            cards: group1 ++ group2,
+            index: 6
+          }
 
         _ ->
           %Results{type: :full_house, exists?: no_full_house, cards: [], index: 6}
@@ -214,7 +225,8 @@ defmodule Poker.Evaluator do
         %Results{
           type: :three_of_a_kind,
           exists?: no_straight_exists,
-          cards: [], index: 4
+          cards: [],
+          index: 4
         }
     end
   end
@@ -239,7 +251,8 @@ defmodule Poker.Evaluator do
         %Results{
           type: :three_of_a_kind,
           exists?: three_of_a_kind_exists,
-          cards: card_values_group, index: 3
+          cards: card_values_group,
+          index: 3
         }
     end
   end
