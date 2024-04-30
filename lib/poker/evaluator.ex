@@ -12,11 +12,13 @@ defmodule Poker.Evaluator do
       best =
       [
         royal_flush?(list_of_cards),
-        straight_flush?(list_of_cards),
+        high_straight_flush?(list_of_cards),
+        low_straight_flush?(list_of_cards),
         four_of_a_kind?(list_of_cards),
         full_house?(list_of_cards),
         flush?(list_of_cards),
-        straight?(list_of_cards),
+        high_straight?(list_of_cards),
+        low_straight?(list_of_cards),
         three_of_a_kind?(list_of_cards),
         two_pair?(list_of_cards),
         one_pair?(list_of_cards)
@@ -39,11 +41,13 @@ defmodule Poker.Evaluator do
     best =
       [
         royal_flush?(list_of_cards),
-        straight_flush?(list_of_cards),
+        high_straight_flush?(list_of_cards),
+        low_straight_flush?(list_of_cards),
         four_of_a_kind?(list_of_cards),
         full_house?(list_of_cards),
         flush?(list_of_cards),
-        straight?(list_of_cards),
+        high_straight?(list_of_cards),
+        low_straight?(list_of_cards),
         three_of_a_kind?(list_of_cards),
         two_pair?(list_of_cards),
         one_pair?(list_of_cards)
@@ -116,7 +120,39 @@ defmodule Poker.Evaluator do
     end
   end
 
-  def straight_flush?(list_of_cards) do
+  def high_straight_flush?(list_of_cards) do
+    straight_flush_exists = true
+    no_straight_flush_exists = false
+
+    card_suit_group =
+      Enum.group_by(list_of_cards, fn %Card{} = card -> card.suit end)
+      |> Enum.filter(fn {_suit, cards} -> Enum.count(cards) >= 5 end)
+
+    case card_suit_group do
+      [] ->
+        %Results{type: :straight_flush, exists?: no_straight_flush_exists, cards: [], index: 8}
+
+      [{_suit, cards}] ->
+        with {true, cards} <-
+               Enum.sort_by(cards, fn %Card{} = card -> card.high_numerical_value end)
+               |> Enum.chunk_every(5, 1, :discard)
+               |> Enum.map(&five_in_sequence?(&1))
+               |> Enum.reject(fn {key, _cards} -> key == false end)
+               |> List.last() do
+          %Results{type: :straight_flush, exists?: straight_flush_exists, cards: cards, index: 8}
+        else
+          nil ->
+            %Results{
+              type: :straight_flush,
+              exists?: no_straight_flush_exists,
+              cards: [],
+              index: 8
+            }
+        end
+    end
+  end
+
+  def low_straight_flush?(list_of_cards) do
     straight_flush_exists = true
     no_straight_flush_exists = false
 
@@ -209,7 +245,29 @@ defmodule Poker.Evaluator do
     end
   end
 
-  def straight?(list_of_cards) do
+  def high_straight?(list_of_cards) do
+    straight_exists = true
+    no_straight_exists = false
+
+    with {true, cards} <-
+           Enum.sort_by(list_of_cards, fn %Card{} = card -> card.high_numerical_value end)
+           |> Enum.chunk_every(5, 1, :discard)
+           |> Enum.map(&five_in_sequence?(&1))
+           |> Enum.reject(fn {key, _cards} -> key == false end)
+           |> List.last() do
+      %Results{type: :straight, exists?: straight_exists, cards: cards, index: 4}
+    else
+      nil ->
+        %Results{
+          type: :three_of_a_kind,
+          exists?: no_straight_exists,
+          cards: [],
+          index: 4
+        }
+    end
+  end
+
+  def low_straight?(list_of_cards) do
     straight_exists = true
     no_straight_exists = false
 
