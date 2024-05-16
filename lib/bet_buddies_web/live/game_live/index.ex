@@ -180,6 +180,12 @@ defmodule BetBuddiesWeb.GameLive.Index do
     """
   end
 
+  def next_round_button(assigns) do
+    ~H"""
+    <button>Next Round</button>
+    """
+  end
+
   def game_start(assigns) do
     ~H"""
     <form phx-submit="start-game" class="flex justify-center">
