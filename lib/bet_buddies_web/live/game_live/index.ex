@@ -175,6 +175,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
           all_in?={@all_in?}
           player_queue={@player_queue}
         />
+        <.next_round_button />
       </div>
     </div>
     """
