@@ -1,49 +1,92 @@
 ExUnit.start()
 
 defmodule Poker.PokerTest do
+  use ExUnit.Case, async: true
+
   alias Ecto.UUID
   alias Poker.GameState
   alias Poker.Player
-  use ExUnit.Case, async: true
 
-  setup_all do
-    game_id = UUID.generate()
+  describe "create_game/2" do
+    test "successfully create a game" do
+      game_id = UUID.generate()
 
-    Poker.create_game(game_id, %Player{
-      player_id: UUID.generate(),
-      name: "test_player_a",
-      wallet: 2000
-    })
-
-    list_of_players = [
-      %Player{
+      player = %Player{
         player_id: UUID.generate(),
-        name: "test_player_b",
-        wallet: 2000
-      },
-      %Player{
-        player_id: UUID.generate(),
-        name: "test_player_c",
-        wallet: 2000
-      },
-      %Player{
-        player_id: UUID.generate(),
-        name: "test_player_d",
-        wallet: 2000
+        name: "test_player_a"
       }
-    ]
 
-    list_of_players
-    |> Enum.each(&Poker.join_game(game_id, &1))
+      assert {:ok, _pid} = Poker.create_game(game_id, player)
+    end
+  end
 
-    %{game_id: game_id, players: list_of_players}
+  describe "start_game/1" do
+    test "successfully start a game" do
+      game_id = UUID.generate()
+
+      player_a = %Player{
+        player_id: UUID.generate(),
+        name: "test_player_a"
+      }
+
+      player_b = %Player{
+        player_id: UUID.generate(),
+        name: "test_player_b"
+      }
+
+      assert {:ok, _pid} = Poker.create_game(game_id, player_a)
+
+      Poker.join_game(game_id, player_b)
+
+      assert %GameState{} = Poker.start_game(game_id)
+    end
   end
 
   describe "all_in/2" do
-    test "hello world", %{game_id: game_id, players: players} do
-      IO.inspect(game_id)
-      IO.inspect(players)
-      :ok
+    setup do
+      players = [
+        %Player{
+          player_id: UUID.generate(),
+          name: "test_player_a",
+          wallet: 2000
+        },
+        %Player{
+          player_id: UUID.generate(),
+          name: "test_player_b",
+          wallet: 2000
+        },
+        %Player{
+          player_id: UUID.generate(),
+          name: "test_player_c",
+          wallet: 2000
+        },
+        %Player{
+          player_id: UUID.generate(),
+          name: "test_player_d",
+          wallet: 2000
+        }
+      ]
+
+      [player_a | players_to_add] = players
+
+      game_id = UUID.generate()
+      Poker.create_game(game_id, player_a)
+
+      players_to_add
+      |> Enum.each(&Poker.join_game(game_id, &1))
+
+      %{
+        game_id: game_id,
+        players: players
+      }
+    end
+
+    test "player successfully all ins", %{game_id: game_id, players: players} do
+      Poker.start_game(game_id)
+
+      [player_a = %Player{} | _tail] = players
+
+      assert %GameState{} = Poker.all_in(game_id, player_a.player_id)
     end
   end
 

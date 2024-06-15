@@ -55,7 +55,7 @@ defmodule Poker.GameSession do
   def handle_call({:all_in, player_id}, _from, %GameState{} = game_state) do
     # If player is all in, and has less than other betters,
     # create a side pot for the richer players.
-    %{player: player, index: index} = find_player(game_state, player_id)
+    %{player: player} = find_player(game_state, player_id)
     # Get the players current wallet
     wallet = Player.get_wallet(player)
     # Reduce player's wallet to 0
@@ -63,9 +63,8 @@ defmodule Poker.GameSession do
     # Update Player
     %GameState{} =
       game_state =
-      GameState.update_player_by_index(game_state, player, index)
+      GameState.update_player_in_players_list(game_state, player)
       |> GameState.add_to_main_pot(wallet)
-      |> GameState.increment_turn_number()
       |> GameState.add_to_hand_log(%HandLog{
         player_id: player_id,
         action: "All In",
