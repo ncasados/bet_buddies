@@ -1,9 +1,51 @@
 ExUnit.start()
 
 defmodule Poker.PokerTest do
+  alias Ecto.UUID
   alias Poker.GameState
   alias Poker.Player
   use ExUnit.Case, async: true
+
+  setup_all do
+    game_id = UUID.generate()
+
+    Poker.create_game(game_id, %Player{
+      player_id: UUID.generate(),
+      name: "test_player_a",
+      wallet: 2000
+    })
+
+    list_of_players = [
+      %Player{
+        player_id: UUID.generate(),
+        name: "test_player_b",
+        wallet: 2000
+      },
+      %Player{
+        player_id: UUID.generate(),
+        name: "test_player_c",
+        wallet: 2000
+      },
+      %Player{
+        player_id: UUID.generate(),
+        name: "test_player_d",
+        wallet: 2000
+      }
+    ]
+
+    list_of_players
+    |> Enum.each(&Poker.join_game(game_id, &1))
+
+    %{game_id: game_id, players: list_of_players}
+  end
+
+  describe "all_in/2" do
+    test "hello world", %{game_id: game_id, players: players} do
+      IO.inspect(game_id)
+      IO.inspect(players)
+      :ok
+    end
+  end
 
   test "create a sidepot" do
     # Create a game
