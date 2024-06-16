@@ -20,8 +20,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       main_pot: main_pot,
       side_pots: side_pots,
       minimum_bet: minimum_bet,
-      most_recent_max_bet: most_recent_max_bet,
-      minimum_call: minimum_call,
+      next_call: next_call,
       player_queue: player_queue,
       dealer_hand: dealer_hand,
       round_winner: winner
@@ -41,8 +40,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:main_pot, main_pot)
       |> assign(:side_pots, if(side_pots == [], do: 0, else: side_pots))
       |> assign(:minimum_bet, minimum_bet)
-      |> assign(:minimum_call, GameState.get_max_bet_from_players(game_state) - players_bet)
-      |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= minimum_call)
+      |> assign(:next_call, next_call)
+      |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= next_call)
       |> assign(:game_state, game_state)
       |> assign(:player_queue, player_queue)
       |> assign(:dealer_hand, dealer_hand)
@@ -106,16 +105,14 @@ defmodule BetBuddiesWeb.GameLive.Index do
       turn_number: turn_number,
       main_pot: main_pot,
       minimum_bet: minimum_bet,
-      most_recent_max_bet: most_recent_max_bet,
-      minimum_call: minimum_call,
+      next_call: next_call,
       player_queue: player_queue,
       dealer_hand: dealer_hand,
       round_winner: winner
     } =
-      game_state =
       Poker.get_game_state(game_id)
 
-    %Player{contributed: players_bet} = player = find_player(players, player.player_id)
+    %Player{} = player = find_player(players, player.player_id)
     other_players = players -- [player]
 
     socket =
@@ -126,9 +123,9 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:turn_number, turn_number)
       |> assign(:main_pot, main_pot)
       |> assign(:minimum_bet, minimum_bet)
-      |> assign(:minimum_call, GameState.get_max_bet_from_players(game_state) - players_bet)
+      |> assign(:next_call, next_call)
       |> assign(:bet_slider_value, minimum_bet)
-      |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= minimum_call)
+      |> assign(:all_in?, player.wallet <= minimum_bet or player.wallet <= next_call)
       |> assign(:player_queue, player_queue)
       |> assign(:dealer_hand, dealer_hand)
       |> assign(:winner, winner)
@@ -171,7 +168,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
           game_stage={@game_stage}
           turn_number={@turn_number}
           minimum_bet={@minimum_bet}
-          minimum_call={@minimum_call}
+          next_call={@next_call}
           all_in?={@all_in?}
           player_queue={@player_queue}
         />
@@ -490,7 +487,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
                         class="bg-[#d1a919] text-neutral-50 w-20 rounded p-1 text-center"
                         onclick="event.preventDefault()"
                         phx-click="call"
-                        value={@minimum_call}
+                        value={@next_call}
                       >
                         Call
                       </button>

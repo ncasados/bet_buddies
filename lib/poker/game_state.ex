@@ -4,13 +4,14 @@ defmodule Poker.GameState do
   # See https://github.com/zblanco/many_ways_to_workflow/blob/master/op_otp/lib/op_otp/
 
   use Ecto.Schema
-  alias Poker.Evaluator.Results
-  alias Poker.Evaluator.Report
-  alias Poker.Evaluator
+
   alias Poker.Card
-  alias Poker.Player
+  alias Poker.Evaluator
+  alias Poker.Evaluator.Report
+  alias Poker.Evaluator.Results
   alias Poker.GameState
   alias Poker.HandLog
+  alias Poker.Player
 
   embedded_schema do
     field :game_id, :string
@@ -25,9 +26,8 @@ defmodule Poker.GameState do
     # Finish out queue
     embeds_many :player_queue, Poker.Player
     field :turn_number, :integer
-    field :minimum_call, :integer, default: 0
+    field :next_call, :integer, default: 0
     field :minimum_bet, :integer, default: 0
-    field :most_recent_max_bet, :integer, default: 0
     field :big_blind, :integer, default: 800
     field :small_blind, :integer, default: 400
     field :hand_log, {:array, :map}, default: []
@@ -37,6 +37,11 @@ defmodule Poker.GameState do
     embeds_one :round_winner, Poker.Player
   end
 
+  @typedoc """
+  Player's UUID string
+  """
+  @type player_id() :: String.t()
+
   # Queries
 
   @spec get_main_pot(%GameState{}) :: integer()
@@ -44,13 +49,14 @@ defmodule Poker.GameState do
     Map.get(game_state, :main_pot)
   end
 
-  # Remember to remove index part
-  @spec find_player(%GameState{}, binary()) :: %{player: %Player{}, index: integer()}
+  @spec find_player(%GameState{}, player_id()) :: %Player{}
   def find_player(%GameState{} = game_state, player_id) do
-    %{
-      player: Enum.find(game_state.players, fn player -> player.player_id == player_id end),
-      index: Enum.find_index(game_state.players, fn player -> player.player_id == player_id end)
-    }
+    Enum.find(game_state.players, fn player -> player.player_id == player_id end)
+  end
+
+  @spec find_player_in_queue(%GameState{}, player_id()) :: %Player{}
+  def find_player_in_queue(%GameState{} = game_state, player_id) do
+    Enum.find(game_state.player_queue, fn player -> player.player_id == player_id end)
   end
 
   @spec get_the_one_player_who_didnt_fold(%GameState{}) :: %Player{}
@@ -77,7 +83,7 @@ defmodule Poker.GameState do
 
   @spec get_players_who_need_to_bet(%GameState{}) :: list(%Player{})
   def get_players_who_need_to_bet(%GameState{} = game_state) do
-    max_bet = get_max_bet_from_players(game_state)
+    max_bet = get_max_contribution_from_players(game_state)
 
     Enum.filter(game_state.players, fn %Player{contributed: contributed, is_all_in?: is_all_in} ->
       (contributed < max_bet and not is_all_in) or is_all_in
@@ -89,8 +95,8 @@ defmodule Poker.GameState do
     Map.get(game_state, :players)
   end
 
-  @spec get_max_bet_from_players(%GameState{}) :: integer()
-  def get_max_bet_from_players(%GameState{} = game_state) do
+  @spec get_max_contribution_from_players(%GameState{}) :: integer()
+  def get_max_contribution_from_players(%GameState{} = game_state) do
     [first_player | _tail] =
       Map.get(game_state, :players)
       |> Enum.sort_by(fn %Player{contributed: contributed} -> contributed end, :desc)
@@ -187,6 +193,18 @@ defmodule Poker.GameState do
       end)
 
     Map.update!(game_state, :round_winner, fn _ -> winning_player.player_id end)
+  end
+
+  @spec set_minimum_calls_on_players(%GameState{}) :: %GameState{}
+  def set_minimum_calls_on_players(%GameState{} = game_state) do
+    Map.update!(game_state, :players, fn
+      list_of_players ->
+        Enum.map(list_of_players, fn %Player{} = player ->
+          Map.update!(player, :minimum_call, fn _ ->
+            GameState.get_max_contribution_from_players(game_state) - player.contributed
+          end)
+        end)
+    end)
   end
 
   def get_best({_index, reports}) do
@@ -302,16 +320,19 @@ defmodule Poker.GameState do
           %GameState{flop_dealt?: false, turn_dealt?: false, river_dealt?: false} ->
             GameState.draw_flop(game_state)
             |> GameState.set_player_queue(players)
+            |> GameState.set_next_call()
             |> GameState.set_flop_dealt(true)
 
           %GameState{flop_dealt?: true, turn_dealt?: false, river_dealt?: false} ->
             GameState.draw_turn(game_state)
             |> GameState.set_player_queue(players)
+            |> GameState.set_next_call()
             |> GameState.set_turn_dealt(true)
 
           %GameState{flop_dealt?: true, turn_dealt?: true, river_dealt?: false} ->
             GameState.draw_river(game_state)
             |> GameState.set_player_queue(players)
+            |> GameState.set_next_call()
             |> GameState.set_river_dealt(true)
 
           %GameState{flop_dealt?: true, turn_dealt?: true, river_dealt?: true} ->
@@ -319,7 +340,7 @@ defmodule Poker.GameState do
             %GameState{round_winner: winner_id} =
               game_state = GameState.determine_winner(game_state)
 
-            %{player: winning_player} = GameState.find_player(game_state, winner_id)
+            winning_player = GameState.find_player(game_state, winner_id)
             give_main_pot_to_player(game_state, winning_player)
         end
       else
@@ -376,7 +397,14 @@ defmodule Poker.GameState do
 
   @spec set_player_queue(%GameState{}, list(%Player{})) :: %GameState{}
   def set_player_queue(%GameState{} = game_state, list_of_players) do
-    Map.update!(game_state, :player_queue, fn _queue -> list_of_players end)
+    Map.update!(game_state, :player_queue, fn
+      _queue ->
+        list_of_players
+        |> Enum.reject(fn
+          %Player{wallet: 0} -> true
+          %Player{} -> false
+        end)
+    end)
   end
 
   @spec add_player_to_queue(%GameState{}, %Player{}) :: %GameState{}
@@ -417,14 +445,14 @@ defmodule Poker.GameState do
     Map.update!(game_state, :main_pot, fn pot -> pot + to_add end)
   end
 
-  @spec set_most_recent_max_bet(%GameState{}, integer()) :: %GameState{}
-  def set_most_recent_max_bet(%GameState{} = game_state, most_recent_max_bet) do
-    Map.update!(game_state, :most_recent_max_bet, fn _ -> most_recent_max_bet end)
-  end
+  @spec set_next_call(%GameState{}) :: %GameState{}
+  def set_next_call(%GameState{} = game_state) do
+    [next_player | _queue] = Map.get(game_state, :player_queue)
 
-  @spec set_minimum_call(%GameState{}, integer()) :: %GameState{}
-  def set_minimum_call(%GameState{} = game_state, minimum_call) do
-    Map.update!(game_state, :minimum_call, fn _ -> minimum_call end)
+    Map.update!(game_state, :next_call, fn
+      _ ->
+        Map.get(next_player, :minimum_call)
+    end)
   end
 
   @spec set_minimum_bet(%GameState{}, integer()) :: %GameState{}

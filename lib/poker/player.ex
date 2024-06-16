@@ -19,6 +19,7 @@ defmodule Poker.Player do
     field :turn_number, :integer, default: 0
     field :folded?, :boolean, default: false
     field :funny_collateral, :string
+    field :minimum_call, :integer, default: 0
   end
 
   # Queries
@@ -50,7 +51,13 @@ defmodule Poker.Player do
   end
 
   def all_in(%Player{} = player) do
-    Map.update!(player, :wallet, fn wallet -> wallet - wallet end)
+    player
+    |> Map.update!(:wallet, fn wallet -> wallet - wallet end)
+    |> Map.update!(:contributed, fn contributed -> player.wallet + contributed end)
+  end
+
+  def set_minimum_call(%Player{} = player, amount) do
+    Map.get(player, :minimum_call, amount)
   end
 
   @spec set_host(%Player{}) :: %Player{}

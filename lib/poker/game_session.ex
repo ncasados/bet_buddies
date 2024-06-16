@@ -53,29 +53,45 @@ defmodule Poker.GameSession do
 
   @impl true
   def handle_call({:all_in, player_id}, _from, %GameState{} = game_state) do
-    # If player is all in, and has less than other betters,
-    # create a side pot for the richer players.
     %{player: player} = find_player(game_state, player_id)
-    # Get the players current wallet
-    wallet = Player.get_wallet(player)
-    # Reduce player's wallet to 0
-    player = Player.all_in(player)
-    # Update Player
-    %GameState{} =
-      game_state =
-      GameState.update_player_in_players_list(game_state, player)
-      |> GameState.add_to_main_pot(wallet)
-      |> GameState.add_to_hand_log(%HandLog{
-        player_id: player_id,
-        action: "All In",
-        value: wallet
-      })
-      |> GameState.set_minimum_call(wallet)
-      |> GameState.set_minimum_bet(wallet * 2)
 
-    PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+    if GameState.is_game_active?(game_state) do
+      if GameState.is_players_turn?(game_state, player) do
+        # If player is all in, and has less than other betters,
+        # create a side pot for the richer players.
+        %{player: player} = find_player(game_state, player_id)
+        # Get the players current wallet
+        wallet = Player.get_wallet(player)
+        # Reduce player's wallet to 0
+        player = Player.all_in(player)
 
-    {:reply, game_state, game_state}
+        game_state = GameState.update_player_in_players_list(game_state, player)
+
+        # Update Player
+        %GameState{} =
+          game_state =
+          game_state
+          |> GameState.remove_player_from_queue(player)
+          |> GameState.set_minimum_calls_on_players()
+          |> GameState.add_to_main_pot(wallet)
+          |> GameState.set_minimum_bet(wallet * 2)
+          |> GameState.add_to_hand_log(%HandLog{
+            player_id: player_id,
+            action: "All In",
+            value: wallet
+          })
+          |> GameState.move_to_next_stage()
+          |> GameState.increment_turn_number()
+
+        PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+        {:reply, game_state, game_state}
+      else
+        {:reply, :not_players_turn, game_state}
+      end
+    else
+      {:reply, :game_not_active, game_state}
+    end
   end
 
   def handle_call(
@@ -93,10 +109,13 @@ defmodule Poker.GameSession do
           Player.deduct_from_wallet(calling_player, amount)
           |> Player.add_to_bet(amount)
 
+        game_state = GameState.update_player_in_players_list(game_state, updated_player)
+
         game_state =
-          GameState.update_player_in_players_list(game_state, updated_player)
+          game_state
           |> GameState.add_to_main_pot(amount)
           |> GameState.remove_player_from_queue(updated_player)
+          |> GameState.increment_turn_number()
           |> GameState.add_to_hand_log(%HandLog{
             player_id: player_id,
             action: "call",
@@ -169,7 +188,6 @@ defmodule Poker.GameSession do
           |> GameState.remove_player_from_queue(updated_player)
           |> GameState.add_to_main_pot(amount)
           |> GameState.set_minimum_bet(amount * 2)
-          |> GameState.set_most_recent_max_bet(GameState.get_max_bet_from_players(game_state))
           |> GameState.increment_turn_number()
           |> GameState.add_to_hand_log(%HandLog{
             player_id: player_id,
@@ -216,16 +234,20 @@ defmodule Poker.GameSession do
 
       players = [big_blind_player, small_blind_player | the_rest]
 
-      player_queue = [small_blind_player | the_rest]
+      game_state =
+        game_state
+        |> GameState.set_players(players)
+        |> GameState.set_minimum_calls_on_players()
+
+      [_big_blind | player_queue] = game_state.players
 
       game_state =
         game_state
         |> GameState.set_player_queue(player_queue)
-        |> GameState.set_players(players)
         |> GameState.set_gamestate_to_active()
         |> GameState.set_minimum_bet(big_blind * 2)
-        |> GameState.set_most_recent_max_bet(get_max_bet_from_players(player_queue))
         |> GameState.add_to_main_pot(big_blind + small_blind)
+        |> GameState.set_next_call()
         |> GameState.set_turn_number(1)
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
@@ -256,7 +278,7 @@ defmodule Poker.GameSession do
     end
   end
 
-  def get_max_bet_from_players(players) do
+  def get_max_contribution_from_players(players) do
     [first_player | _tail] =
       Enum.sort_by(players, fn %Player{contributed: contributed} -> contributed end, :desc)
 
