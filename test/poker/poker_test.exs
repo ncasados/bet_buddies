@@ -70,7 +70,24 @@ defmodule Poker.PokerTest do
     end
 
     test "successfully start a game", %{game_id: game_id} do
-      assert %GameState{game_stage: "ACTIVE"} = Poker.start_game(game_id)
+      game_state = Poker.start_game(game_id)
+
+      # Game should be active
+      assert %GameState{game_stage: "ACTIVE", next_call: next_call, turn_number: 1} = game_state
+
+      # Next call should not be 0
+      assert next_call != 0
+
+      # Big blind should not be in queue
+      big_blind_player =
+        Map.get(game_state, :players)
+        |> Enum.find(fn %Player{is_big_blind?: is_big_blind} -> is_big_blind end)
+
+      assert nil ==
+               Map.get(game_state, :player_queue)
+               |> Enum.find(fn %Player{player_id: player_id} ->
+                 player_id == big_blind_player.player_id
+               end)
     end
   end
 
