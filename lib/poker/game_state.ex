@@ -34,6 +34,7 @@ defmodule Poker.GameState do
     field :flop_dealt?, :boolean, default: false
     field :turn_dealt?, :boolean, default: false
     field :river_dealt?, :boolean, default: false
+    field :player_hand_reports, {:array, :map}, default: []
     embeds_one :round_winner, Poker.Player
   end
 
@@ -145,11 +146,11 @@ defmodule Poker.GameState do
   end
 
   @spec is_players_turn?(%GameState{}, %Player{}) :: boolean()
-  def is_players_turn?(%GameState{turn_number: turn_number, player_queue: player_queue}, %Player{
-        turn_number: player_turn_number,
+  def is_players_turn?(%GameState{turn_number: _turn_number, player_queue: player_queue}, %Player{
+        turn_number: _player_turn_number,
         player_id: player_id
       }) do
-    %Player{player_id: queue_player_id} = top_queue_player = List.first(player_queue)
+    %Player{player_id: queue_player_id} = _top_queue_player = List.first(player_queue)
     queue_player_id == player_id
   end
 
@@ -193,6 +194,16 @@ defmodule Poker.GameState do
       end)
 
     Map.update!(game_state, :round_winner, fn _ -> winning_player.player_id end)
+  end
+
+  @spec get_player_hand_reports(%GameState{}) :: %GameState{}
+  def get_player_hand_reports(%GameState{} = game_state) do
+    reports =
+      Enum.map(game_state.players, fn %Player{player_id: player_id, hand: hand} ->
+        Evaluator.report(player_id, hand, game_state.dealer_hand)
+      end)
+
+    Map.update!(game_state, :player_hand_reports, fn _ -> reports end)
   end
 
   @spec set_minimum_calls_on_players(%GameState{}) :: %GameState{}
@@ -338,7 +349,10 @@ defmodule Poker.GameState do
           %GameState{flop_dealt?: true, turn_dealt?: true, river_dealt?: true} ->
             # TODO Need to get pot splits figured out and side pots
             %GameState{round_winner: winner_id} =
-              game_state = GameState.determine_winner(game_state)
+              game_state =
+              game_state
+              |> GameState.determine_winner()
+              |> GameState.get_player_hand_reports()
 
             winning_player = GameState.find_player(game_state, winner_id)
             give_main_pot_to_player(game_state, winning_player)

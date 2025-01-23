@@ -1,6 +1,6 @@
 defmodule Poker.GameSession do
   use GenServer
-  alias Poker.Card
+
   alias Poker.GameState
   alias Phoenix.PubSub
   alias Poker.Player
@@ -99,7 +99,7 @@ defmodule Poker.GameSession do
         _from,
         %GameState{} = game_state
       ) do
-    %{player: calling_player, index: player_index} = find_player(game_state, player_id)
+    %{player: calling_player, index: _player_index} = find_player(game_state, player_id)
 
     if GameState.is_game_active?(game_state) do
       if GameState.is_players_turn?(game_state, calling_player) do
@@ -136,7 +136,7 @@ defmodule Poker.GameSession do
 
   def handle_call({:fold, player_id}, _from, %GameState{} = game_state) do
     if GameState.is_game_active?(game_state) do
-      %{player: player, index: player_index} = find_player(game_state, player_id)
+      %{player: player, index: _player_index} = find_player(game_state, player_id)
 
       updated_player = Player.set_folded(player, true)
 

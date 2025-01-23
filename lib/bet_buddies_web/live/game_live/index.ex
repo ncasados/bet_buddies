@@ -23,12 +23,15 @@ defmodule BetBuddiesWeb.GameLive.Index do
       next_call: next_call,
       player_queue: player_queue,
       dealer_hand: dealer_hand,
-      round_winner: winner
+      round_winner: winner,
+      player_hand_reports: player_hand_reports
     } = game_state = Poker.get_game_state(game_id)
 
-    %Player{contributed: players_bet} = player = find_player(players, player_id)
+    %Player{contributed: _players_bet} = player = find_player(players, player_id)
 
     other_players = players -- [player]
+
+    player_hand_report = Enum.find(player_hand_reports, fn report -> report.player_id == player.player_id end)
 
     socket =
       assign(socket, :game_id, game_id)
@@ -46,6 +49,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:player_queue, player_queue)
       |> assign(:dealer_hand, dealer_hand)
       |> assign(:winner, winner)
+      |> assign(:player_hand_report, player_hand_report)
 
     {:ok, socket}
   end
@@ -108,12 +112,15 @@ defmodule BetBuddiesWeb.GameLive.Index do
       next_call: next_call,
       player_queue: player_queue,
       dealer_hand: dealer_hand,
-      round_winner: winner
+      round_winner: winner,
+      player_hand_reports: player_hand_reports
     } =
       Poker.get_game_state(game_id)
 
     %Player{} = player = find_player(players, player.player_id)
     other_players = players -- [player]
+
+    player_hand_report = Enum.find(player_hand_reports, fn report -> report.player_id == player.player_id end)
 
     socket =
       assign(socket, :game_id, game_id)
@@ -129,6 +136,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       |> assign(:player_queue, player_queue)
       |> assign(:dealer_hand, dealer_hand)
       |> assign(:winner, winner)
+      |> assign(:player_hand_report, player_hand_report)
 
     {:noreply, socket}
   end
@@ -163,6 +171,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
         <% end %>
         <.player
           winner={@winner}
+          report={@player_hand_report}
           player={@player}
           bet_slider_value={@bet_slider_value}
           game_stage={@game_stage}
@@ -522,8 +531,9 @@ defmodule BetBuddiesWeb.GameLive.Index do
             <div class="flex border shadow-lg rounded p-2 bg-white">
               <div class="flex-col space-y-2">
                 <%= if @winner == @player.player_id do %>
-                  <div class="flex-row text-center">Winner</div>
+                  <div class="flex-row text-center">Winner <%= @report.best.type %></div>
                 <% else %>
+                  <div class="flex-row text-center"><%= if @report, do: @report.best.type, else: nil %></div>
                 <% end %>
                 <div class="flex-row text-center"><%= @player.name %></div>
                 <div class="flex-row bg-gray-300 rounded p-1 text-center">$<%= @player.wallet %></div>

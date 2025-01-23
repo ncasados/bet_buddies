@@ -186,7 +186,7 @@ defmodule Poker.PokerTest do
     end
 
     test "successfully call", %{
-      started_game: %GameState{game_id: game_id, player_queue: players} = game_state
+      started_game: %GameState{game_id: game_id, player_queue: players} = _game_state
     } do
       [player | _tail] = players
 

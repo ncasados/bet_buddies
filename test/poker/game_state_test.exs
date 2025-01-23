@@ -9,7 +9,7 @@ defmodule Poker.GameStateTest do
 
       player = player_factory()
 
-      {:ok, pid} = Poker.GameSupervisor.create_game(game_id, player)
+      {:ok, _pid} = Poker.GameSupervisor.create_game(game_id, player)
     end
   end
 
