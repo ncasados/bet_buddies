@@ -3,6 +3,7 @@ ExUnit.start()
 defmodule Poker.PokerTest do
   use ExUnit.Case, async: true
 
+  alias Poker.HandLog
   alias Ecto.UUID
   alias Poker.GameState
   alias Poker.Player
@@ -184,10 +185,16 @@ defmodule Poker.PokerTest do
       }
     end
 
-    test "successfully call", %{started_game: %GameState{game_id: game_id, players: players}} do
-      [player_a | _tail] = players
+    test "successfully call", %{
+      started_game: %GameState{game_id: game_id, player_queue: players} = game_state
+    } do
+      [player | _tail] = players
 
-      Poker.call(game_id, player_a.player_id, 200)
+      # TODO fillout assertion
+      assert %GameState{hand_log: [%HandLog{player_id: player_id}]} =
+               Poker.call(game_id, player.player_id, "200")
+
+      assert player_id == player.player_id
     end
   end
 end

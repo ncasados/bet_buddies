@@ -239,7 +239,16 @@ defmodule Poker.GameSession do
         |> GameState.set_players(players)
         |> GameState.set_minimum_calls_on_players()
 
-      [_big_blind | player_queue] = game_state.players
+      player_queue =
+        case length(game_state.players) do
+          length when length == 2 ->
+            [_big_blind | player_queue] = game_state.players
+            player_queue
+
+          length when length > 2 ->
+            [_big_blind, _little_blind | player_queue] = game_state.players
+            player_queue
+        end
 
       game_state =
         game_state
