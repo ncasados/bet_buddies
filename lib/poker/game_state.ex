@@ -145,11 +145,11 @@ defmodule Poker.GameState do
   end
 
   @spec is_players_turn?(%GameState{}, %Player{}) :: boolean()
-  def is_players_turn?(%GameState{turn_number: turn_number, player_queue: player_queue}, %Player{
-        turn_number: player_turn_number,
+  def is_players_turn?(%GameState{turn_number: _turn_number, player_queue: player_queue}, %Player{
+        turn_number: _player_turn_number,
         player_id: player_id
       }) do
-    %Player{player_id: queue_player_id} = top_queue_player = List.first(player_queue)
+    %Player{player_id: queue_player_id} = _top_queue_player = List.first(player_queue)
     queue_player_id == player_id
   end
 

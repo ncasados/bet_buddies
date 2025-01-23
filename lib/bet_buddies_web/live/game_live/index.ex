@@ -26,7 +26,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       round_winner: winner
     } = game_state = Poker.get_game_state(game_id)
 
-    %Player{contributed: players_bet} = player = find_player(players, player_id)
+    %Player{contributed: _players_bet} = player = find_player(players, player_id)
 
     other_players = players -- [player]
 
