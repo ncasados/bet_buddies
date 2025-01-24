@@ -71,7 +71,7 @@ defmodule Poker.Evaluator do
            end) do
       results
     else
-      nil -> %Results{type: :none, exists?: true, cards: []}
+      nil -> %Results{type: :none, exists?: true, cards: [], index: 0}
     end
   end
 

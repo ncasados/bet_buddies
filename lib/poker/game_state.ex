@@ -187,6 +187,7 @@ defmodule Poker.GameState do
       |> Enum.sort_by(fn {index, _reports} -> index end)
       |> List.last()
       |> get_best()
+      |> dbg()
 
     winning_player =
       Enum.find(game_state.players, fn %Player{player_id: player_id} ->
