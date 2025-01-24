@@ -185,8 +185,13 @@ defmodule Poker.GameState do
       |> Enum.group_by(fn %Report{best: %Results{index: index}} -> index end)
       |> Map.to_list()
       |> Enum.sort_by(fn {index, _reports} -> index end)
+      |> Enum.reject(fn
+        {nil, _reports} -> true
+        {_any_other_hand_index, _reports} -> false
+      end)
       |> List.last()
       |> get_best()
+      |> dbg()
 
     winning_player =
       Enum.find(game_state.players, fn %Player{player_id: player_id} ->
