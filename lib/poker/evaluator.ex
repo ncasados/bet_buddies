@@ -365,9 +365,9 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec high_card?(list(Card)) :: %Card{}
+  @spec high_card?(list(Card.t())) :: %Card{}
   def high_card?(list_of_cards) do
-    Enum.sort_by(list_of_cards, fn %Card{} = card -> card.high_numerical_value end)
+    Enum.sort_by(list_of_cards, & &1.high_numerical_value)
     |> List.last()
   end
 
