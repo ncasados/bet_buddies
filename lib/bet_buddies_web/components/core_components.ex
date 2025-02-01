@@ -17,6 +17,8 @@ defmodule BetBuddiesWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
+  alias Phoenix.HTML
+
   import BetBuddiesWeb.Gettext
 
   @doc """
@@ -303,7 +305,7 @@ defmodule BetBuddiesWeb.CoreComponents do
   def input(%{type: "checkbox"} = assigns) do
     assigns =
       assign_new(assigns, :checked, fn ->
-        Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
+        HTML.Form.normalize_value("checkbox", assigns[:value])
       end)
 
     ~H"""

@@ -35,7 +35,7 @@ defmodule Poker.EvaluatorTest do
   end
 
   test "report card of cards" do
-    [h1, h2 | dealer_hand] = Poker.Evaluator.Hands.a_nothing_hand()
+    [h1, h2 | dealer_hand] = Hands.a_nothing_hand()
     player_hand = [h1, h2]
 
     Evaluator.report("player", player_hand, dealer_hand)
