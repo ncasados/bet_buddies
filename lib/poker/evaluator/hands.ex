@@ -1,4 +1,8 @@
 defmodule Poker.Evaluator.Hands do
+  @moduledoc """
+  This module holds functions for producing different poker hands.
+  """
+
   alias Poker.Card
 
   def a_nothing_hand do

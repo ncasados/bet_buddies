@@ -1,4 +1,8 @@
 defmodule Poker.Player do
+  @moduledoc """
+  Represents a poker player.
+  """
+
   alias Poker.HandLog
   alias Poker.Player
   use Ecto.Schema

@@ -1,4 +1,8 @@
 defmodule Poker.Evaluator do
+  @moduledoc """
+  Defines a poker evaluator. This module is responsible for evaluating poker hands and determining the winner.
+  """
+
   alias Poker.Card
   alias Poker.Evaluator.Report
   alias Poker.Evaluator.Results

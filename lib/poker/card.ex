@@ -1,4 +1,8 @@
 defmodule Poker.Card do
+  @moduledoc """
+  Represents a poker card. Each card has a suit and a literal value, as well as high and low numerical values.
+  """
+
   @type t :: %__MODULE__{
           suit: String.t(),
           literal_value: String.t(),

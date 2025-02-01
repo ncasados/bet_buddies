@@ -1,4 +1,8 @@
 defmodule Poker do
+  @moduledoc """
+  Defines main poker game functions.
+  """
+
   alias Ecto.UUID
   alias Poker.Card
   alias Poker.GameState

@@ -1,4 +1,8 @@
 defmodule Poker.GameSupervisor do
+  @moduledoc """
+  A dynamic supervisor for starting poker games. Each poker game is managed by a GameSession process.
+  """
+
   use DynamicSupervisor
 
   alias Poker.GameSession

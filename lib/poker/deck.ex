@@ -1,4 +1,8 @@
 defmodule Poker.Deck do
+  @moduledoc """
+  Represents a deck of poker cards. A deck contains 52 unique cards.
+  """
+
   alias Poker.Card
 
   @type t :: list(Card.t())

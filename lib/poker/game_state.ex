@@ -1,7 +1,7 @@
 defmodule Poker.GameState do
-  # Put all of the business logic here such as checking the state is correct
-  # Stuff such as betting, calling, folding, checking
-  # See https://github.com/zblanco/many_ways_to_workflow/blob/master/op_otp/lib/op_otp/
+  @moduledoc """
+  Defines the GameState schema. This module is responsible for managing the state of a poker game.
+  """
 
   use Ecto.Schema
 
@@ -169,8 +169,8 @@ defmodule Poker.GameState do
     not_folded_players >= 3
   end
 
-  @spec is_players_turn?(GameState.t(), Player.t()) :: boolean()
-  def is_players_turn?(%GameState{turn_number: _turn_number, player_queue: player_queue}, %Player{
+  @spec players_turn?(GameState.t(), Player.t()) :: boolean()
+  def players_turn?(%GameState{turn_number: _turn_number, player_queue: player_queue}, %Player{
         turn_number: _player_turn_number,
         player_id: player_id
       }) do
@@ -178,20 +178,20 @@ defmodule Poker.GameState do
     queue_player_id == player_id
   end
 
-  @spec is_game_active?(GameState.t()) :: boolean()
-  def is_game_active?(%GameState{game_stage: "ACTIVE"}), do: true
-  def is_game_active?(%GameState{game_stage: _}), do: false
+  @spec game_active?(GameState.t()) :: boolean()
+  def game_active?(%GameState{game_stage: "ACTIVE"}), do: true
+  def game_active?(%GameState{game_stage: _}), do: false
 
-  @spec is_game_lobby?(GameState.t()) :: boolean()
-  def is_game_lobby?(%GameState{game_stage: "LOBBY"}), do: true
-  def is_game_lobby?(%GameState{game_stage: _}), do: false
+  @spec game_lobby?(GameState.t()) :: boolean()
+  def game_lobby?(%GameState{game_stage: "LOBBY"}), do: true
+  def game_lobby?(%GameState{game_stage: _}), do: false
 
   @spec enough_players?(GameState.t()) :: boolean()
   def enough_players?(%GameState{players: players}) when length(players) >= 2, do: true
   def enough_players?(%GameState{players: players}) when length(players) < 2, do: false
 
-  @spec is_player_already_joined?(GameState.t(), Player.t()) :: boolean()
-  def is_player_already_joined?(%GameState{} = game_state, %Player{player_id: player_id}) do
+  @spec player_already_joined?(GameState.t(), Player.t()) :: boolean()
+  def player_already_joined?(%GameState{} = game_state, %Player{player_id: player_id}) do
     not is_nil(Enum.find(game_state.players, fn player -> player.player_id == player_id end))
   end
 
@@ -520,7 +520,7 @@ defmodule Poker.GameState do
 
   @spec add_player_to_state(GameState.t(), Player.t()) :: GameState.t()
   def add_player_to_state(%GameState{} = game_state, %Player{} = player) do
-    if is_game_lobby?(game_state) do
+    if game_lobby?(game_state) do
       Map.update!(game_state, :players, fn player_list ->
         [
           player

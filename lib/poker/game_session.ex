@@ -1,4 +1,8 @@
 defmodule Poker.GameSession do
+  @moduledoc """
+  Defines functions that manage a poker game session.
+  """
+
   use GenServer
 
   alias Phoenix.PubSub
@@ -55,8 +59,8 @@ defmodule Poker.GameSession do
   def handle_call({:all_in, player_id}, _from, %GameState{} = game_state) do
     %{player: player} = find_player(game_state, player_id)
 
-    if GameState.is_game_active?(game_state) do
-      if GameState.is_players_turn?(game_state, player) do
+    if GameState.game_active?(game_state) do
+      if GameState.players_turn?(game_state, player) do
         # If player is all in, and has less than other betters,
         # create a side pot for the richer players.
         %{player: player} = find_player(game_state, player_id)
@@ -101,8 +105,8 @@ defmodule Poker.GameSession do
       ) do
     %{player: calling_player, index: _player_index} = find_player(game_state, player_id)
 
-    if GameState.is_game_active?(game_state) do
-      if GameState.is_players_turn?(game_state, calling_player) do
+    if GameState.game_active?(game_state) do
+      if GameState.players_turn?(game_state, calling_player) do
         {amount, _} = if is_binary(amount), do: Integer.parse(amount)
 
         updated_player =
@@ -135,7 +139,7 @@ defmodule Poker.GameSession do
   end
 
   def handle_call({:fold, player_id}, _from, %GameState{} = game_state) do
-    if GameState.is_game_active?(game_state) do
+    if GameState.game_active?(game_state) do
       %{player: player, index: _player_index} = find_player(game_state, player_id)
 
       updated_player = Player.set_folded(player, true)
@@ -155,7 +159,7 @@ defmodule Poker.GameSession do
   end
 
   def handle_call({:check, player_id}, _from, %GameState{} = game_state) do
-    if GameState.is_game_active?(game_state) do
+    if GameState.game_active?(game_state) do
       %{player: player} = find_player(game_state, player_id)
 
       game_state =
@@ -174,8 +178,8 @@ defmodule Poker.GameSession do
   def handle_call({:bet, player_id, amount} = _msg, _from, %GameState{} = game_state) do
     %{player: betting_player} = find_player(game_state, player_id)
 
-    if GameState.is_game_active?(game_state) do
-      if GameState.is_players_turn?(game_state, betting_player) do
+    if GameState.game_active?(game_state) do
+      if GameState.players_turn?(game_state, betting_player) do
         {amount, _} = if is_binary(amount), do: Integer.parse(amount)
 
         updated_player =
@@ -276,7 +280,7 @@ defmodule Poker.GameSession do
         _from,
         %GameState{} = game_state
       ) do
-    case GameState.is_player_already_joined?(game_state, player) do
+    case GameState.player_already_joined?(game_state, player) do
       false ->
         game_state = GameState.add_player_to_state(game_state, player)
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
