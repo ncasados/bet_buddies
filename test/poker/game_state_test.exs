@@ -13,11 +13,11 @@ defmodule Poker.GameStateTest do
     end
   end
 
-  defp player_factory() do
+  defp player_factory do
     %Player{
       player_id: Faker.UUID.v4(),
       name: Faker.Pokemon.name(),
-      wallet: 20000,
+      wallet: 20_000,
       contributed: 0,
       hand: [],
       is_host?: false,

@@ -1,10 +1,11 @@
 defmodule BetBuddiesWeb.GameLive.Index do
-  use Phoenix.LiveView
+  use BetBuddiesWeb, :html
   use Phoenix.Component
+  use Phoenix.LiveView
+
+  alias Phoenix.PubSub
   alias Poker.GameState
   alias Poker.Player
-  alias Phoenix.PubSub
-  use BetBuddiesWeb, :html
 
   def mount(
         %{"game_id" => game_id} = _params,

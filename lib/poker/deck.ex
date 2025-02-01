@@ -3,8 +3,8 @@ defmodule Poker.Deck do
 
   @type t :: list(Card.t())
 
-  @spec new() :: list(Card.t())
-  def new() do
+  @spec new :: list(Card.t())
+  def new do
     suits = ["spade", "heart", "club", "diamond"]
 
     values = [

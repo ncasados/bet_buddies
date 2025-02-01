@@ -2,10 +2,11 @@ ExUnit.start()
 
 defmodule Poker.EvaluatorTest do
   use ExUnit.Case, async: true
-  alias Poker.Evaluator.Results
+
   alias Poker.Card
   alias Poker.Evaluator
   alias Poker.Evaluator.Hands
+  alias Poker.Evaluator.Results
 
   describe "royal_flush?/1" do
     test "A royal flush is a royal flush" do

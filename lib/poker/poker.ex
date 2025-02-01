@@ -1,8 +1,8 @@
 defmodule Poker do
-  alias Poker.Player
-  alias Poker.GameState
-  alias Poker.Card
   alias Ecto.UUID
+  alias Poker.Card
+  alias Poker.GameState
+  alias Poker.Player
 
   def all_in(game_id, player_id) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
@@ -30,8 +30,8 @@ defmodule Poker do
     Poker.GameSession.bet(pid, player_id, amount)
   end
 
-  @spec new_game_id() :: String.t()
-  def new_game_id() do
+  @spec new_game_id :: String.t()
+  def new_game_id do
     UUID.generate()
   end
 
@@ -59,8 +59,8 @@ defmodule Poker do
     Poker.GameSupervisor.create_game(game_id, player)
   end
 
-  @spec new_shuffled_deck() :: [Card.t()]
-  def new_shuffled_deck() do
+  @spec new_shuffled_deck :: [Card.t()]
+  def new_shuffled_deck do
     Poker.Deck.new()
     |> Poker.Deck.shuffle()
   end

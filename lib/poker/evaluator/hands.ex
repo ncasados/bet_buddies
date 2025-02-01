@@ -1,7 +1,7 @@
 defmodule Poker.Evaluator.Hands do
   alias Poker.Card
 
-  def a_nothing_hand() do
+  def a_nothing_hand do
     Poker.new_shuffled_deck()
     |> Enum.reduce([], fn
       %Card{suit: "spade", literal_value: "2"} = card, acc ->
@@ -30,7 +30,7 @@ defmodule Poker.Evaluator.Hands do
     end)
   end
 
-  def a_one_pair() do
+  def a_one_pair do
     Poker.new_shuffled_deck()
     |> Enum.reduce([], fn
       %Card{suit: "spade", literal_value: "2"} = card, acc ->
@@ -59,7 +59,7 @@ defmodule Poker.Evaluator.Hands do
     end)
   end
 
-  def a_two_pair() do
+  def a_two_pair do
     Poker.new_shuffled_deck()
     |> Enum.reduce([], fn
       %Card{suit: "spade", literal_value: "2"} = card, acc ->
@@ -88,7 +88,7 @@ defmodule Poker.Evaluator.Hands do
     end)
   end
 
-  def a_three_of_a_kind() do
+  def a_three_of_a_kind do
     Poker.new_shuffled_deck()
     |> Enum.reduce([], fn
       %Card{suit: "spade", literal_value: "2"} = card, acc ->
@@ -117,7 +117,7 @@ defmodule Poker.Evaluator.Hands do
     end)
   end
 
-  def a_straight() do
+  def a_straight do
     Poker.new_shuffled_deck()
     |> Enum.reduce([], fn
       %Card{suit: "spade", literal_value: "10"} = card, acc ->
@@ -146,7 +146,7 @@ defmodule Poker.Evaluator.Hands do
     end)
   end
 
-  def a_flush() do
+  def a_flush do
     suits = ["spade", "diamond", "club", "heart"]
     flush_suit = Enum.random(suits)
 
@@ -178,7 +178,7 @@ defmodule Poker.Evaluator.Hands do
     end)
   end
 
-  def a_full_house() do
+  def a_full_house do
     Poker.new_shuffled_deck()
     |> Enum.reduce([], fn
       %Card{suit: "spade", literal_value: "A"} = card, acc ->
@@ -207,7 +207,7 @@ defmodule Poker.Evaluator.Hands do
     end)
   end
 
-  def a_four_of_a_kind() do
+  def a_four_of_a_kind do
     Poker.new_shuffled_deck()
     |> Enum.reduce([], fn
       %Card{suit: "spade", literal_value: "Q"} = card, acc ->
@@ -236,7 +236,7 @@ defmodule Poker.Evaluator.Hands do
     end)
   end
 
-  def a_straight_flush() do
+  def a_straight_flush do
     suits = ["spade", "diamond", "club", "heart"]
     flush_suit = Enum.random(suits)
 
@@ -268,7 +268,7 @@ defmodule Poker.Evaluator.Hands do
     end)
   end
 
-  def a_royal_flush() do
+  def a_royal_flush do
     suits = ["spade", "diamond", "club", "heart"]
     flush_suit = Enum.random(suits)
 

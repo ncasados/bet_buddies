@@ -1,7 +1,7 @@
 defmodule Poker.Evaluator do
   alias Poker.Card
-  alias Poker.Evaluator.Results
   alias Poker.Evaluator.Report
+  alias Poker.Evaluator.Results
 
   def report(player_id, hand, dealer_hand) do
     high_card = high_card?(hand)

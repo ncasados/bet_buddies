@@ -1,10 +1,10 @@
 defmodule Poker.GameSession do
   use GenServer
 
-  alias Poker.GameState
   alias Phoenix.PubSub
-  alias Poker.Player
+  alias Poker.GameState
   alias Poker.HandLog
+  alias Poker.Player
 
   @spec all_in(pid(), binary()) :: GameState.t()
   def all_in(pid, player_id) do

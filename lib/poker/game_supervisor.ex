@@ -1,8 +1,9 @@
 defmodule Poker.GameSupervisor do
   use DynamicSupervisor
-  alias Poker.Player
-  alias Poker.GameState
+
   alias Poker.GameSession
+  alias Poker.GameState
+  alias Poker.Player
 
   def create_game(game_id, %Player{} = player) do
     player = Player.set_host(player)

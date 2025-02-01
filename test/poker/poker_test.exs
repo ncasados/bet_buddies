@@ -3,9 +3,9 @@ ExUnit.start()
 defmodule Poker.PokerTest do
   use ExUnit.Case, async: true
 
-  alias Poker.HandLog
   alias Ecto.UUID
   alias Poker.GameState
+  alias Poker.HandLog
   alias Poker.Player
 
   describe "create_game/2" do
