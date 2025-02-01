@@ -1,6 +1,5 @@
 defmodule Poker.Evaluator do
   alias Poker.Card
-  alias Poker.Evaluator.Hands
   alias Poker.Evaluator.Results
   alias Poker.Evaluator.Report
 
@@ -30,30 +29,6 @@ defmodule Poker.Evaluator do
       best: best,
       player_id: player_id
     }
-  end
-
-  def report() do
-    [h1, h2 | dealer_hand] = Hands.a_nothing_hand()
-    hand = [h1, h2]
-    high_card = high_card?(hand)
-    list_of_cards = hand ++ dealer_hand
-
-    best =
-      [
-        royal_flush?(list_of_cards),
-        high_straight_flush?(list_of_cards),
-        low_straight_flush?(list_of_cards),
-        four_of_a_kind?(list_of_cards),
-        full_house?(list_of_cards),
-        flush?(list_of_cards),
-        high_straight?(list_of_cards),
-        low_straight?(list_of_cards),
-        three_of_a_kind?(list_of_cards),
-        two_pair?(list_of_cards),
-        one_pair?(list_of_cards)
-      ]
-
-    %Report{high_card: high_card, best: best, player_id: "player_id"}
   end
 
   def get_best(report) do
