@@ -16,8 +16,8 @@ defmodule BetBuddiesWeb.CoreComponents do
   """
   use Phoenix.Component
 
-  alias Phoenix.LiveView.JS
   alias Phoenix.HTML
+  alias Phoenix.LiveView.JS
 
   import BetBuddiesWeb.Gettext
 
