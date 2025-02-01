@@ -5,7 +5,7 @@ defmodule Poker.Evaluator do
   alias Poker.Evaluator.Report
 
   def report(player_id, hand, dealer_hand) do
-    %Card{} = high_card = high_card?(hand)
+    high_card = high_card?(hand)
     list_of_cards = hand ++ dealer_hand
 
     %Results{} =
@@ -365,7 +365,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec high_card?(list(Card)) :: %Results{}
+  @spec high_card?(list(Card)) :: %Card{}
   def high_card?(list_of_cards) do
     Enum.sort_by(list_of_cards, fn %Card{} = card -> card.high_numerical_value end)
     |> List.last()
