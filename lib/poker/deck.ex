@@ -1,7 +1,9 @@
 defmodule Poker.Deck do
   alias Poker.Card
 
-  @spec new() :: [Card.t()]
+  @type t :: list(Card.t())
+
+  @spec new() :: list(Card.t())
   def new() do
     suits = ["spade", "heart", "club", "diamond"]
 
@@ -31,7 +33,7 @@ defmodule Poker.Deck do
     end
   end
 
-  @spec shuffle(deck :: [Card.t()]) :: [Card.t()]
+  @spec shuffle(deck :: list(Card.t())) :: list(Card.t())
   def shuffle(deck) do
     Enum.shuffle(deck)
   end
