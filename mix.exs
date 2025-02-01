@@ -54,7 +54,8 @@ defmodule BetBuddies.MixProject do
       {:mix_audit, "~> 2.1"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:faker, "~> 0.18", only: :test},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:ex_machina, "~> 2.8.0", only: :test}
     ]
   end
 

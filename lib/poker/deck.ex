@@ -9,7 +9,7 @@ defmodule Poker.Deck do
 
   @spec new :: list(Card.t())
   def new do
-    suits = ["spade", "heart", "club", "diamond"]
+    suits = [:spade, :heart, :club, :diamond]
 
     values = [
       {"2", 2, 2},

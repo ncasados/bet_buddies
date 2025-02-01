@@ -4,7 +4,8 @@ defmodule Poker.Card do
   """
 
   @type t :: %__MODULE__{
-          suit: String.t(),
+          suit: :spade | :heart | :club | :diamond,
+          # 2-10, J, Q, K, A
           literal_value: String.t(),
           high_numerical_value: integer(),
           low_numerical_value: integer()

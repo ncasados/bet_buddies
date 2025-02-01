@@ -28,7 +28,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
       player_hand_reports: player_hand_reports
     } = game_state = Poker.get_game_state(game_id)
 
-    %Player{contributed: _players_bet} = player = find_player(players, player_id)
+    player = find_player(players, player_id)
 
     other_players = players -- [player]
 
@@ -98,6 +98,11 @@ defmodule BetBuddiesWeb.GameLive.Index do
 
   def handle_event("call", %{"value" => amount} = _params, socket) do
     Poker.call(socket.assigns.game_id, socket.assigns.player.player_id, amount)
+    {:noreply, socket}
+  end
+
+  def handle_event("next-round", _params, socket) do
+    Poker.next_round(socket.assigns.game_id)
     {:noreply, socket}
   end
 
@@ -192,13 +197,13 @@ defmodule BetBuddiesWeb.GameLive.Index do
 
   def next_round_button(assigns) do
     ~H"""
-    <button>Next Round</button>
+    <button phx-click="next-round">Next Round</button>
     """
   end
 
   def game_start(assigns) do
     ~H"""
-    <form phx-submit="start-game" class="flex justify-center">
+    <form phx-submit="start-game" class="flex justify-center" name="start-game-form">
       <button
         type="submit"
         name="start-game-button"
@@ -232,19 +237,19 @@ defmodule BetBuddiesWeb.GameLive.Index do
     suit =
       case card.suit do
         nil -> ""
-        "spade" -> "♠"
-        "heart" -> "♥"
-        "diamond" -> "♦"
-        "club" -> "♣"
+        :spade -> "♠"
+        :heart -> "♥"
+        :diamond -> "♦"
+        :club -> "♣"
       end
 
     color =
       case card.suit do
         nil -> ""
-        "spade" -> "text-[#000000]"
-        "heart" -> "text-[#FF0000]"
-        "club" -> "text-[#000000]"
-        "diamond" -> "text-[#FF0000]"
+        :spade -> "text-[#000000]"
+        :heart -> "text-[#FF0000]"
+        :club -> "text-[#000000]"
+        :diamond -> "text-[#FF0000]"
       end
 
     assigns =

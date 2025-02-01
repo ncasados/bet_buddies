@@ -17,7 +17,7 @@ defmodule Poker.GameState do
           game_id: String.t(),
           game_started_at: NaiveDateTime.t(),
           password: String.t(),
-          game_stage: String.t(),
+          game_stage: :ACTIVE | :LOBBY,
           dealer_hand: list(Card.t()),
           dealer_deck: list(Card.t()),
           main_pot: integer(),
@@ -34,7 +34,8 @@ defmodule Poker.GameState do
           turn_dealt?: boolean(),
           river_dealt?: boolean(),
           player_hand_reports: list(Report.t()),
-          round_winner: Player.t()
+          round_winner: Player.t(),
+          round_number: integer()
         }
 
   embedded_schema do
@@ -60,6 +61,7 @@ defmodule Poker.GameState do
     field :river_dealt?, :boolean, default: false
     field :player_hand_reports, {:array, :map}, default: []
     embeds_one :round_winner, Poker.Player
+    field :round_number, :integer, default: 1
   end
 
   @typedoc """
@@ -197,7 +199,9 @@ defmodule Poker.GameState do
 
   # Transformations
 
-  # Spec that I want
+  def increment_round_number(%GameState{} = state),
+    do: %{state | round_number: state.round_number + 1}
+
   @spec determine_winner(GameState.t()) :: GameState.t()
   def determine_winner(%GameState{} = game_state) do
     # To do build out the card evaluation stuff

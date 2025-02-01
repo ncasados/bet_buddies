@@ -5,7 +5,7 @@ defmodule Poker.HandLog do
 
   @type t :: %__MODULE__{
           player_id: String.t(),
-          action: String.t(),
+          action: :all_in | :call | :fold | :check | :bet,
           value: integer()
         }
 

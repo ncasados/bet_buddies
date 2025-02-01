@@ -8,42 +8,40 @@ defmodule Poker.Player do
   use Ecto.Schema
 
   @type t :: %Player{
-          player_id: String.t(),
-          name: String.t(),
-          wallet: integer(),
           contributed: integer(),
+          folded?: boolean(),
+          funny_collateral: String.t() | nil,
           hand: list(map()),
-          is_host?: boolean(),
-          last_action: HandLog.t(),
-          last_actions: [HandLog.t()],
           is_all_in?: boolean(),
           is_big_blind?: boolean(),
+          is_host?: boolean(),
           is_small_blind?: boolean(),
           is_under_the_gun?: boolean(),
+          last_action: HandLog.t() | nil,
+          last_actions: [HandLog.t()],
+          minimum_call: integer(),
+          name: String.t(),
+          player_id: String.t(),
           turn_number: integer(),
-          folded?: boolean(),
-          funny_collateral: String.t(),
-          minimum_call: integer()
+          wallet: integer()
         }
 
-  embedded_schema do
-    field :player_id, :string
-    field :name, :string
-    field :wallet, :integer, default: 20_000
-    field :contributed, :integer, default: 0
-    field :hand, {:array, :map}, default: []
-    field :is_host?, :boolean, default: false
-    embeds_one :last_action, HandLog
-    embeds_many :last_actions, HandLog
-    field :is_all_in?, :boolean, default: false
-    field :is_big_blind?, :boolean, default: false
-    field :is_small_blind?, :boolean, default: false
-    field :is_under_the_gun?, :boolean, default: false
-    field :turn_number, :integer, default: 0
-    field :folded?, :boolean, default: false
-    field :funny_collateral, :string
-    field :minimum_call, :integer, default: 0
-  end
+  defstruct contributed: 0,
+            folded?: false,
+            funny_collateral: "the house",
+            hand: [],
+            is_all_in?: false,
+            is_big_blind?: false,
+            is_host?: false,
+            is_small_blind?: false,
+            is_under_the_gun?: false,
+            last_action: nil,
+            last_actions: [],
+            minimum_call: 0,
+            name: "some-name",
+            player_id: "some-uuid",
+            turn_number: 1,
+            wallet: 20_000
 
   # Queries
 

@@ -34,6 +34,11 @@ defmodule Poker do
     Poker.GameSession.bet(pid, player_id, amount)
   end
 
+  def next_round(game_id) do
+    [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
+    Poker.GameSession.next_round(pid)
+  end
+
   @spec new_game_id :: String.t()
   def new_game_id do
     UUID.generate()

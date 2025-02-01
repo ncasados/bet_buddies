@@ -50,6 +50,10 @@ defmodule Poker.GameSession do
     GenServer.call(pid, {:join, player})
   end
 
+  def next_round(pid) do
+    GenServer.call(pid, :next_round)
+  end
+
   @impl true
   def handle_info(:update, state) do
     {:noreply, state}
@@ -81,7 +85,7 @@ defmodule Poker.GameSession do
           |> GameState.set_minimum_bet(wallet * 2)
           |> GameState.add_to_hand_log(%HandLog{
             player_id: player_id,
-            action: "All In",
+            action: :all_in,
             value: wallet
           })
           |> GameState.move_to_next_stage()
@@ -122,7 +126,7 @@ defmodule Poker.GameSession do
           |> GameState.increment_turn_number()
           |> GameState.add_to_hand_log(%HandLog{
             player_id: player_id,
-            action: "call",
+            action: :call,
             value: amount
           })
           |> GameState.move_to_next_stage()
@@ -147,7 +151,7 @@ defmodule Poker.GameSession do
       game_state =
         GameState.update_player_in_players_list(game_state, updated_player)
         |> GameState.remove_player_from_queue(updated_player)
-        |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: "fold", value: 0})
+        |> GameState.add_to_hand_log(%HandLog{player_id: player_id, action: :fold, value: 0})
         |> GameState.move_to_next_stage()
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
@@ -164,7 +168,7 @@ defmodule Poker.GameSession do
 
       game_state =
         GameState.remove_player_from_queue(game_state, player)
-        |> GameState.add_to_hand_log(%HandLog{player_id: player_id, value: 0, action: "check"})
+        |> GameState.add_to_hand_log(%HandLog{player_id: player_id, value: 0, action: :check})
         |> GameState.move_to_next_stage()
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
@@ -195,7 +199,7 @@ defmodule Poker.GameSession do
           |> GameState.increment_turn_number()
           |> GameState.add_to_hand_log(%HandLog{
             player_id: player_id,
-            action: "bet",
+            action: :bet,
             value: amount
           })
 
@@ -289,6 +293,11 @@ defmodule Poker.GameSession do
       _ ->
         {:reply, game_state, game_state}
     end
+  end
+
+  def handle_call(:next_round, _from, state) do
+    GameState.increment_round_number(state)
+    {:reply, state, state}
   end
 
   def get_max_contribution_from_players(players) do
