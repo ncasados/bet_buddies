@@ -1,9 +1,13 @@
 defmodule Poker.HandLog do
-  use Ecto.Schema
+  @type t :: %__MODULE__{
+          player_id: String.t(),
+          action: String.t(),
+          value: integer()
+        }
 
-  embedded_schema do
-    field :player_id, :string
-    field :action, :string
-    field :value, :integer
-  end
+  defstruct [
+    :player_id,
+    :action,
+    :value
+  ]
 end

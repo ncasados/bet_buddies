@@ -6,42 +6,42 @@ defmodule Poker.GameSession do
   alias Poker.Player
   alias Poker.HandLog
 
-  @spec all_in(pid(), binary()) :: %GameState{}
+  @spec all_in(pid(), binary()) :: GameState.t()
   def all_in(pid, player_id) do
     GenServer.call(pid, {:all_in, player_id})
   end
 
-  @spec call(pid(), binary(), binary()) :: %GameState{}
+  @spec call(pid(), binary(), binary()) :: GameState.t()
   def call(pid, player_id, amount) do
     GenServer.call(pid, {:call, player_id, amount})
   end
 
-  @spec fold(pid(), binary()) :: %GameState{}
+  @spec fold(pid(), binary()) :: GameState.t()
   def fold(pid, player_id) do
     GenServer.call(pid, {:fold, player_id})
   end
 
-  @spec check(pid(), binary()) :: %GameState{}
+  @spec check(pid(), binary()) :: GameState.t()
   def check(pid, player_id) do
     GenServer.call(pid, {:check, player_id})
   end
 
-  @spec bet(pid(), binary(), binary()) :: %GameState{}
+  @spec bet(pid(), binary(), binary()) :: GameState.t()
   def bet(pid, player_id, amount) do
     GenServer.call(pid, {:bet, player_id, amount})
   end
 
-  @spec start(pid()) :: %GameState{}
+  @spec start(pid()) :: GameState.t()
   def start(pid) do
     GenServer.call(pid, :start)
   end
 
-  @spec read(pid()) :: %GameState{}
+  @spec read(pid()) :: GameState.t()
   def read(pid) do
     GenServer.call(pid, :read)
   end
 
-  @spec join(pid(), %Player{}) :: %GameState{}
+  @spec join(pid(), Player.t()) :: GameState.t()
   def join(pid, player) do
     GenServer.call(pid, {:join, player})
   end
@@ -294,7 +294,7 @@ defmodule Poker.GameSession do
     Map.get(first_player, :contributed)
   end
 
-  @spec find_player(%GameState{}, binary()) :: %{player: %Player{}, index: integer()}
+  @spec find_player(GameState.t(), binary()) :: %{player: Player.t(), index: integer()}
   defp find_player(%GameState{} = game_state, player_id) do
     %{
       player: Enum.find(game_state.players, fn player -> player.player_id == player_id end),

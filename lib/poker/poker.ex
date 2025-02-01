@@ -24,7 +24,7 @@ defmodule Poker do
     Poker.GameSession.check(pid, player_id)
   end
 
-  @spec bet(String.t(), String.t(), String.t()) :: %GameState{}
+  @spec bet(String.t(), String.t(), String.t()) :: GameState.t()
   def bet(game_id, player_id, amount) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
     Poker.GameSession.bet(pid, player_id, amount)
@@ -35,25 +35,25 @@ defmodule Poker do
     UUID.generate()
   end
 
-  @spec start_game(String.t()) :: %GameState{}
+  @spec start_game(String.t()) :: GameState.t()
   def start_game(game_id) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
     Poker.GameSession.start(pid)
   end
 
-  @spec get_game_state(String.t()) :: %GameState{}
+  @spec get_game_state(String.t()) :: GameState.t()
   def get_game_state(game_id) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
     Poker.GameSession.read(pid)
   end
 
-  @spec join_game(String.t(), %Player{}) :: %GameState{}
+  @spec join_game(String.t(), Player.t()) :: GameState.t()
   def join_game(game_id, %Player{} = player) do
     [{pid, nil}] = Registry.lookup(Poker.GameRegistry, game_id)
     Poker.GameSession.join(pid, player)
   end
 
-  @spec create_game(String.t(), %Player{}) ::
+  @spec create_game(String.t(), Player.t()) ::
           :ignore | {:error, any()} | {:ok, pid()} | {:ok, pid(), any()}
   def create_game(game_id, %Player{} = player) do
     Poker.GameSupervisor.create_game(game_id, player)

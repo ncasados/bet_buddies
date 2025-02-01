@@ -31,7 +31,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
 
     other_players = players -- [player]
 
-    player_hand_report = Enum.find(player_hand_reports, fn report -> report.player_id == player.player_id end)
+    player_hand_report =
+      Enum.find(player_hand_reports, fn report -> report.player_id == player.player_id end)
 
     socket =
       assign(socket, :game_id, game_id)
@@ -120,7 +121,8 @@ defmodule BetBuddiesWeb.GameLive.Index do
     %Player{} = player = find_player(players, player.player_id)
     other_players = players -- [player]
 
-    player_hand_report = Enum.find(player_hand_reports, fn report -> report.player_id == player.player_id end)
+    player_hand_report =
+      Enum.find(player_hand_reports, fn report -> report.player_id == player.player_id end)
 
     socket =
       assign(socket, :game_id, game_id)
@@ -145,7 +147,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
     {:noreply, socket}
   end
 
-  @spec find_player([%Player{}], binary()) :: %Player{}
+  @spec find_player(list(Player.t()), binary()) :: Player.t()
   def find_player(players, player_id) do
     Enum.find(players, fn %Poker.Player{} = player -> player.player_id == player_id end)
   end
@@ -533,7 +535,9 @@ defmodule BetBuddiesWeb.GameLive.Index do
                 <%= if @winner == @player.player_id do %>
                   <div class="flex-row text-center">Winner <%= @report.best.type %></div>
                 <% else %>
-                  <div class="flex-row text-center"><%= if @report, do: @report.best.type, else: nil %></div>
+                  <div class="flex-row text-center">
+                    <%= if @report, do: @report.best.type, else: nil %>
+                  </div>
                 <% end %>
                 <div class="flex-row text-center"><%= @player.name %></div>
                 <div class="flex-row bg-gray-300 rounded p-1 text-center">$<%= @player.wallet %></div>

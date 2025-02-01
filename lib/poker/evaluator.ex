@@ -50,7 +50,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec royal_flush?(list(Card)) :: %Results{}
+  @spec royal_flush?(list(Card)) :: Results.t()
   def royal_flush?(list_of_cards) do
     royal_flush_exists = true
     no_royal_flush_exists = false
@@ -95,7 +95,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec high_straight_flush?(list(Card)) :: %Results{}
+  @spec high_straight_flush?(list(Card)) :: Results.t()
   def high_straight_flush?(list_of_cards) do
     straight_flush_exists = true
     no_straight_flush_exists = false
@@ -128,7 +128,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec low_straight_flush?(list(Card)) :: %Results{}
+  @spec low_straight_flush?(list(Card)) :: Results.t()
   def low_straight_flush?(list_of_cards) do
     straight_flush_exists = true
     no_straight_flush_exists = false
@@ -161,7 +161,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec four_of_a_kind?(list(Card)) :: %Results{}
+  @spec four_of_a_kind?(list(Card)) :: Results.t()
   def four_of_a_kind?(list_of_cards) do
     four_of_a_kind_exists = true
     no_four_of_a_kind = false
@@ -179,7 +179,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec full_house?(list(Card)) :: %Results{}
+  @spec full_house?(list(Card)) :: Results.t()
   def full_house?(list_of_cards) do
     full_house_exists = true
     no_full_house = false
@@ -210,7 +210,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec flush?(list(Card)) :: %Results{}
+  @spec flush?(list(Card)) :: Results.t()
   def flush?(list_of_cards) do
     flush_exists = true
     no_flush_exists = false
@@ -225,7 +225,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec high_straight?(list(Card)) :: %Results{}
+  @spec high_straight?(list(Card)) :: Results.t()
   def high_straight?(list_of_cards) do
     straight_exists = true
     no_straight_exists = false
@@ -248,7 +248,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec low_straight?(list(Card)) :: %Results{}
+  @spec low_straight?(list(Card)) :: Results.t()
   def low_straight?(list_of_cards) do
     straight_exists = true
     no_straight_exists = false
@@ -271,7 +271,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec three_of_a_kind?(list(Card)) :: %Results{}
+  @spec three_of_a_kind?(list(Card)) :: Results.t()
   def three_of_a_kind?(list_of_cards) do
     three_of_a_kind_exists = true
     no_three_of_a_kind_exists = false
@@ -298,7 +298,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec two_pair?(list(Card)) :: %Results{}
+  @spec two_pair?(list(Card)) :: Results.t()
   def two_pair?(list_of_cards) do
     two_pair_exists = true
     no_two_pair_exists = false
@@ -318,7 +318,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec one_pair?(list(Card)) :: %Results{}
+  @spec one_pair?(list(Card)) :: Results.t()
   def one_pair?(list_of_cards) do
     pair_exists = true
     no_pair_exists = false
@@ -340,7 +340,7 @@ defmodule Poker.Evaluator do
     end
   end
 
-  @spec high_card?(list(Card.t())) :: %Card{}
+  @spec high_card?(list(Card.t())) :: Card.t()
   def high_card?(list_of_cards) do
     Enum.sort_by(list_of_cards, & &1.high_numerical_value)
     |> List.last()
