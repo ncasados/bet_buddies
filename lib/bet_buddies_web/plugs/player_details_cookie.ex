@@ -1,4 +1,10 @@
 defmodule BetBuddiesWeb.Plugs.PlayerDetailsCookie do
+  @moduledoc """
+  Defines a plug to handle the `player_id` cookie.
+
+  This cookies is used to track the player's ID across sessions.
+  """
+
   import Plug.Conn
 
   def init(_), do: []
