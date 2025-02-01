@@ -31,9 +31,8 @@ defmodule Poker.Deck do
     end
   end
 
-  @spec shuffle() :: [Card.t()]
-  def shuffle() do
-    __MODULE__.new()
-    |> Enum.shuffle()
+  @spec shuffle(deck :: [Card.t()]) :: [Card.t()]
+  def shuffle(deck) do
+    Enum.shuffle(deck)
   end
 end
