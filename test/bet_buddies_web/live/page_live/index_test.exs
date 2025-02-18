@@ -1,6 +1,8 @@
 defmodule BetBuddiesWeb.PageLive.IndexTest do
   use BetBuddiesWeb.ConnCase
 
+  alias Poker.Player
+
   import Phoenix.LiveViewTest
 
   test "GET /", %{conn: conn} do
@@ -23,5 +25,27 @@ defmodule BetBuddiesWeb.PageLive.IndexTest do
              |> follow_redirect(conn)
 
     assert game_lobby_html =~ "Waiting for players"
+  end
+
+  test "Join a game", %{conn: conn} do
+    game_id = Faker.UUID.v4()
+
+    assert {:ok, _pid} =
+             Poker.create_game(game_id, %Player{name: "Goku", player_id: Faker.UUID.v4()})
+
+    conn = put_req_cookie(conn, "player_id", Faker.UUID.v4())
+
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    assert {:ok, _view, html} =
+             view
+             |> form("#join-game-form", %{
+               "joining-player-name-field" => "Vegeta",
+               "joining-game-id-field" => game_id
+             })
+             |> render_submit()
+             |> follow_redirect(conn)
+
+    assert html =~ "Waiting for host to start game"
   end
 end

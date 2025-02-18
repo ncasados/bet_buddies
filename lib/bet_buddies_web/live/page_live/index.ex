@@ -42,6 +42,7 @@ defmodule BetBuddiesWeb.PageLive.Index do
         name="create-game-form"
         class="flex flex-col justify-center max-w-xs m-2 justify-between"
       >
+        <h1 class="font-bold text-xl text-center">Create a game</h1>
         <input
           type="text"
           name="player-name-field"
@@ -65,6 +66,7 @@ defmodule BetBuddiesWeb.PageLive.Index do
         name="join-game-form"
         class="flex flex-col justify-center max-w-xs m-2 space-y-2 justify-between"
       >
+        <h1 class="font-bold text-xl text-center">Join a game</h1>
         <input
           type="text"
           name="joining-player-name-field"
