@@ -197,6 +197,7 @@ defmodule Poker.GameSession do
           |> GameState.add_to_main_pot(amount)
           |> GameState.set_minimum_bet(amount * 2)
           |> GameState.increment_turn_number()
+          |> GameState.set_minimum_calls_on_players()
           |> GameState.add_to_hand_log(%HandLog{
             player_id: player_id,
             action: :bet,
