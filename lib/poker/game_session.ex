@@ -60,7 +60,6 @@ defmodule Poker.GameSession do
   end
 
   def handle_info(:stop, state) do
-    IO.puts("Hello")
     {:stop, :normal, state}
   end
 
