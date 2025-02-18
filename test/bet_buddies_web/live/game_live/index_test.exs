@@ -18,7 +18,8 @@ defmodule BetBuddiesWeb.GameLive.IndexTest do
     test "GET /game/:game_id lobby game stage", %{conn: conn, game_id: game_id} do
       assert {:ok, _view, html} = live(conn, ~p"/game/#{game_id}")
 
-      assert html =~ "Start Game"
+      assert html =~ "Waiting for players"
+      assert html =~ game_id
     end
   end
 

@@ -22,6 +22,6 @@ defmodule BetBuddiesWeb.PageLive.IndexTest do
              })
              |> follow_redirect(conn)
 
-    assert game_lobby_html =~ "Start Game"
+    assert game_lobby_html =~ "Waiting for players"
   end
 end

@@ -167,7 +167,17 @@ defmodule BetBuddiesWeb.GameLive.Index do
         <.other_players players={@other_players} game_stage={@game_stage} />
         <%= case assigns do %>
           <% %{game_stage: "LOBBY", player: %{is_host?: true}} -> %>
-            <.game_start game_id={@game_id} />
+            <%= if Enum.empty?(@other_players) do %>
+              <div class="flex justify-center">
+                <div class="bg-white p-4 rounded text-center max-w-xs">
+                  <p class="animate-bounce">Waiting for players...</p>
+                  <p>Send this to your friends</p>
+                  <p style="color:red"><%= @game_id %></p>
+                </div>
+              </div>
+            <% else %>
+              <.game_start game_id={@game_id} />
+            <% end %>
           <% %{game_stage: "LOBBY", player: %{is_host?: false}} -> %>
             <div class="flex justify-center">
               <div class="bg-white p-4 rounded text-center max-w-xs">
