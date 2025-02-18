@@ -3,7 +3,7 @@ defmodule Poker.GameSession do
   Defines functions that manage a poker game session.
   """
 
-  use GenServer
+  use GenServer, restart: :transient
 
   alias Phoenix.PubSub
   alias Poker.GameState
@@ -59,6 +59,11 @@ defmodule Poker.GameSession do
     {:noreply, state}
   end
 
+  def handle_info(:stop, state) do
+    IO.puts("Hello")
+    {:stop, :normal, state}
+  end
+
   @impl true
   def handle_call({:all_in, player_id}, _from, %GameState{} = game_state) do
     %{player: player} = find_player(game_state, player_id)
@@ -92,6 +97,8 @@ defmodule Poker.GameSession do
           |> GameState.increment_turn_number()
 
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+        kill_self_after_time()
 
         {:reply, game_state, game_state}
       else
@@ -133,6 +140,8 @@ defmodule Poker.GameSession do
 
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
+        kill_self_after_time()
+
         {:reply, game_state, game_state}
       else
         {:reply, :not_players_turn, game_state}
@@ -156,6 +165,8 @@ defmodule Poker.GameSession do
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
+      kill_self_after_time()
+
       {:reply, game_state, game_state}
     else
       {:reply, :game_not_active, game_state}
@@ -172,6 +183,8 @@ defmodule Poker.GameSession do
         |> GameState.move_to_next_stage()
 
       PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+      kill_self_after_time()
 
       {:reply, game_state, game_state}
     else
@@ -205,6 +218,8 @@ defmodule Poker.GameSession do
           })
 
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
+
+        kill_self_after_time()
 
         {:reply, game_state, game_state}
       else
@@ -316,6 +331,10 @@ defmodule Poker.GameSession do
     }
   end
 
+  defp kill_self_after_time() do
+    Process.send_after(self(), :stop, 3_600_000)
+  end
+
   # GenServer startup
 
   def start_link(%GameState{} = game_state) do
@@ -325,6 +344,7 @@ defmodule Poker.GameSession do
   @impl true
   def init(%GameState{} = game_state) do
     PubSub.subscribe(BetBuddies.PubSub, game_state.game_id)
+    kill_self_after_time()
     {:ok, game_state}
   end
 
