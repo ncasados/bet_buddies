@@ -121,9 +121,11 @@ defmodule Poker.GameSession do
 
         updated_player =
           Player.deduct_from_wallet(calling_player, amount)
-          |> Player.add_to_bet(amount)
+          |> Player.add_to_contribution(amount)
 
-        game_state = GameState.update_player_in_players_list(game_state, updated_player)
+        game_state =
+          GameState.update_player_in_players_list(game_state, updated_player)
+          |> GameState.set_minimum_calls_on_players()
 
         game_state =
           game_state
@@ -200,21 +202,25 @@ defmodule Poker.GameSession do
 
         updated_player =
           Player.deduct_from_wallet(betting_player, amount)
-          |> Player.add_to_bet(amount)
+          |> Player.add_to_contribution(amount)
 
         game_state =
           GameState.update_player_in_players_list(game_state, updated_player)
+          |> GameState.set_minimum_calls_on_players()
+
+        game_state =
+          game_state
           |> GameState.set_player_queue(GameState.get_players(game_state))
           |> GameState.remove_player_from_queue(updated_player)
           |> GameState.add_to_main_pot(amount)
           |> GameState.set_minimum_bet(amount * 2)
           |> GameState.increment_turn_number()
-          |> GameState.set_minimum_calls_on_players()
           |> GameState.add_to_hand_log(%HandLog{
             player_id: player_id,
             action: :bet,
             value: amount
           })
+          |> dbg()
 
         PubSub.broadcast!(BetBuddies.PubSub, game_state.game_id, :update)
 
@@ -248,12 +254,12 @@ defmodule Poker.GameSession do
       big_blind_player =
         Player.set_big_blind(big_blind_player, true)
         |> Player.deduct_from_wallet(big_blind)
-        |> Player.add_to_bet(big_blind)
+        |> Player.add_to_contribution(big_blind)
 
       small_blind_player =
         Player.set_small_blind(small_blind_player, true)
         |> Player.deduct_from_wallet(small_blind)
-        |> Player.add_to_bet(small_blind)
+        |> Player.add_to_contribution(small_blind)
 
       players = [big_blind_player, small_blind_player | the_rest]
 

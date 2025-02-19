@@ -86,8 +86,8 @@ defmodule Poker.Player do
     Map.update!(player, :is_host?, fn _ -> true end)
   end
 
-  @spec add_to_bet(Player.t(), integer()) :: Player.t()
-  def add_to_bet(%Player{} = player, amount_to_add) do
+  @spec add_to_contribution(Player.t(), integer()) :: Player.t()
+  def add_to_contribution(%Player{} = player, amount_to_add) do
     Map.update!(player, :contributed, fn contributed -> contributed + amount_to_add end)
   end
 
