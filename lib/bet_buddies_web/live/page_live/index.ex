@@ -36,6 +36,9 @@ defmodule BetBuddiesWeb.PageLive.Index do
   def render(assigns) do
     ~H"""
     <div class="flex flex-row justify-center">
+      <p class="font-bolt text-4xl">Play Texas Hold'em With Friends</p>
+    </div>
+    <div class="flex flex-row justify-center">
       <form
         phx-submit="create-game"
         id="create-game-form"

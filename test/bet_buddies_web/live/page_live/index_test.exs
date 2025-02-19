@@ -7,6 +7,7 @@ defmodule BetBuddiesWeb.PageLive.IndexTest do
 
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/")
+    assert html_response(conn, 200) =~ "Play Texas Hold'em With Friends"
     assert html_response(conn, 200) =~ "Create Game"
     assert html_response(conn, 200) =~ "Join Game"
   end
