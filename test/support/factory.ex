@@ -66,12 +66,67 @@ defmodule Poker.Factory do
     }
   end
 
-  def card_factory do
+  def card_factory() do
+    {literal_value, high_numerical_value, low_numerical_value} = Enum.random(card_values())
+
     %Card{
-      suit: :spade,
-      literal_value: "A",
-      high_numerical_value: 14,
-      low_numerical_value: 1
+      suit: Enum.random(card_suits()),
+      literal_value: literal_value,
+      high_numerical_value: high_numerical_value,
+      low_numerical_value: low_numerical_value
     }
+  end
+
+  def card_factory(%{suit: suit, literal_value: literal_value}) do
+    {literal_value, low_numerical_value, high_numerical_value} =
+      card_values()
+      |> Enum.find(fn {literal, _lv, _hv} -> literal == literal_value end)
+
+    %Card{
+      suit: suit,
+      literal_value: literal_value,
+      high_numerical_value: high_numerical_value,
+      low_numerical_value: low_numerical_value
+    }
+  end
+
+  def card_factory(%{literal_value: literal_value}) do
+    {literal_value, low_numerical_value, high_numerical_value} =
+      card_values()
+      |> Enum.find(fn {literal, _lv, _hv} -> literal == literal_value end)
+
+    %Card{
+      suit: Enum.random(card_suits()),
+      literal_value: literal_value,
+      high_numerical_value: high_numerical_value,
+      low_numerical_value: low_numerical_value
+    }
+  end
+
+  def card_factory(attrs) do
+    card_factory()
+    |> merge_attributes(attrs)
+  end
+
+  defp card_suits() do
+    [:spade, :club, :heart, :diamond]
+  end
+
+  defp card_values() do
+    [
+      {"2", 2, 2},
+      {"3", 3, 3},
+      {"4", 4, 4},
+      {"5", 5, 5},
+      {"6", 6, 6},
+      {"7", 7, 7},
+      {"8", 8, 8},
+      {"9", 9, 9},
+      {"10", 10, 10},
+      {"J", 11, 11},
+      {"Q", 12, 12},
+      {"K", 13, 13},
+      {"A", 1, 14}
+    ]
   end
 end

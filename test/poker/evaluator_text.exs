@@ -8,13 +8,37 @@ defmodule Poker.EvaluatorTest do
   alias Poker.Evaluator.Hands
   alias Poker.Evaluator.Results
 
+  import Poker.Factory
+
   describe "royal_flush?/1" do
     test "A royal flush is a royal flush" do
-      assert %Results{exists?: true} = Evaluator.royal_flush?(Hands.a_royal_flush())
+      royal_flush =
+        [
+          build(:card, %{suit: :spade, literal_value: "10"}),
+          build(:card, %{suit: :spade, literal_value: "A"}),
+          build(:card, %{suit: :spade, literal_value: "J"}),
+          build(:card, %{suit: :spade, literal_value: "Q"}),
+          build(:card, %{suit: :spade, literal_value: "K"}),
+          build(:card, suit: Enum.random([:heart, :diamond, :club])),
+          build(:card, suit: Enum.random([:heart, :diamond, :club]))
+        ]
+
+      assert %Results{exists?: true} = Evaluator.royal_flush?(royal_flush)
     end
 
     test "Not a royal flush is not a royal flush" do
-      assert %Results{exists?: false} = Evaluator.royal_flush?(Hands.a_nothing_hand())
+      hand =
+        [
+          build(:card, suit: :club),
+          build(:card, suit: :diamond),
+          build(:card, suit: :spade),
+          build(:card, suit: :heart),
+          build(:card, suit: :spade),
+          build(:card, suit: :diamond),
+          build(:card, suit: :club)
+        ]
+
+      assert %Results{exists?: false} = Evaluator.royal_flush?(hand)
     end
   end
 
@@ -32,12 +56,5 @@ defmodule Poker.EvaluatorTest do
 
       assert high_value == Enum.max_by(hand, & &1.high_numerical_value).high_numerical_value
     end
-  end
-
-  test "report card of cards" do
-    [h1, h2 | dealer_hand] = Hands.a_nothing_hand()
-    player_hand = [h1, h2]
-
-    Evaluator.report("player", player_hand, dealer_hand)
   end
 end
