@@ -12,7 +12,7 @@ defmodule Poker.EvaluatorTest do
 
   describe "royal_flush?/1" do
     test "A royal flush is a royal flush" do
-      royal_flush =
+      hand =
         [
           build(:card, %{suit: :spade, literal_value: "10"}),
           build(:card, %{suit: :spade, literal_value: "A"}),
@@ -23,7 +23,7 @@ defmodule Poker.EvaluatorTest do
           build(:card, suit: Enum.random([:heart, :diamond, :club]))
         ]
 
-      assert %Results{exists?: true} = Evaluator.royal_flush?(royal_flush)
+      assert %Results{exists?: true} = Evaluator.royal_flush?(hand)
     end
 
     test "Not a royal flush is not a royal flush" do
