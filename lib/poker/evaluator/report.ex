@@ -8,6 +8,8 @@ defmodule Poker.Evaluator.Report do
   This could be a straight flush, four of a kind, full house, etc.
   """
 
+  @type t() :: __MODULE__
+
   defstruct [
     :high_card,
     :best,
