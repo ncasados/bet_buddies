@@ -20,6 +20,9 @@ defmodule BetBuddiesWeb.Router do
     pipe_through :browser
 
     live "/", PageLive.Index
+    live "/join", PageLive.Join
+    live "/join/:game_id", PageLive.Join
+
     live "/game/:game_id", GameLive.Index
   end
 
