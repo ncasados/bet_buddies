@@ -170,7 +170,7 @@ defmodule BetBuddiesWeb.GameLive.Index do
                 <div class="bg-white p-4 rounded text-center max-w-xs">
                   <p class="animate-bounce">Waiting for players...</p>
                   <p>Send this to your friends</p>
-                  <p style="color:red">https://betbuddies.fly.dev/join/<%= @game_id %></p>
+                  <p style="color:red">https://bet-buddies.fly.dev/join/<%= @game_id %></p>
                 </div>
               </div>
             <% else %>
