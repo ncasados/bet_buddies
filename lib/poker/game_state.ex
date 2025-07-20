@@ -376,7 +376,7 @@ defmodule Poker.GameState do
 
           %GameState{flop_dealt?: true, turn_dealt?: true, river_dealt?: true} ->
             # TODO Need to get pot splits figured out and side pots
-            %GameState{round_winner: %Player{player_id: winner_id}} =
+            %GameState{round_winner: winner_id} =
               game_state =
               game_state
               |> GameState.determine_winner()
